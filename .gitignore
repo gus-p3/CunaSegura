@@ -1,0 +1,46 @@
+# Built artifacts
+bin/
+gen/
+out/
+build/
+app/build/
+/*/build/
+
+# Gradle files
+.gradle/
+.navigation/
+
+# Local configuration files (contains SDK paths, local settings)
+local.properties
+.device/
+
+# Log files
+*.log
+*.log.*
+
+# Android Studio / IntelliJ IDEA files
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Keystore / Signing files (NEVER commit signing keys)
+*.jks
+*.keystore
+*.pk8
+*.pem
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Crashlytics / Firebase / Mobile tools
+crashlytics-build.properties
+.cxx/
+.externalNativeBuild/
+captures/
