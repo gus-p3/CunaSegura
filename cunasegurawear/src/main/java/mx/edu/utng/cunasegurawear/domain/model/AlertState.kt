@@ -1,5 +1,7 @@
 package mx.edu.utng.cunasegurawear.domain.model
 
+import mx.edu.utng.cunasegurawear.data.db.TouchConfig
+
 data class AlertState(
     val phase: AlertPhase = AlertPhase.IDLE,
     val countdownSeconds: Int = 5,
@@ -7,7 +9,9 @@ data class AlertState(
     val contactsNotified: Int = 0,
     val gpsAddress: String = "",
     val configuredActions: List<SosAction> = emptyList(),
+    val touchConfigs: List<TouchConfig> = emptyList(),
     val activeActionLabel: String = "",
+    val activeActionName: String = "",
     val latitude: Double = 0.0,
     val longitude: Double = 0.0
 )

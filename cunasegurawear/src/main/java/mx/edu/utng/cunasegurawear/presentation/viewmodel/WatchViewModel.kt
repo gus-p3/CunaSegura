@@ -13,10 +13,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Locale
+import mx.edu.utng.cunasegurawear.data.db.TouchConfig
 import mx.edu.utng.cunasegurawear.data.db.TouchConfigDao
 import mx.edu.utng.cunasegurawear.data.location.WatchLocationTracker
 import mx.edu.utng.cunasegurawear.domain.model.AlertPhase
 import mx.edu.utng.cunasegurawear.domain.model.AlertState
+import mx.edu.utng.cunasegurawear.domain.model.SosAction
 import mx.edu.utng.cunasegurawear.domain.usecase.CancelAlertUseCase
 import mx.edu.utng.cunasegurawear.domain.usecase.GetSosActionsUseCase
 import mx.edu.utng.cunasegurawear.domain.usecase.TriggerSosUseCase
@@ -41,11 +43,82 @@ class WatchViewModel(
             val actions = getSosActions()
             _state.update { it.copy(configuredActions = actions) }
         }
+
+        // Observe dynamic configurations from Room database with self-healing fallback (slots 1, 2, 3, 4)
+        viewModelScope.launch {
+            touchConfigDao.getAllConfigs().collect { configs ->
+                val needsSelfHealing = configs.size < 4 || configs.any { it.actionLabel.isBlank() || it.actionName.isBlank() }
+                if (needsSelfHealing) {
+                    viewModelScope.launch(Dispatchers.IO) {
+                        touchConfigDao.insertConfigs(
+                            listOf(
+                                TouchConfig(1, "MENSAJE_SMS", "SMS de Ayuda"),
+                                TouchConfig(2, "UBICACION_TIEMPO_REAL", "Compartir GPS"),
+                                TouchConfig(3, "ALARMA_TV", "Bocina de Vecino"),
+                                TouchConfig(4, "LLAMAR_911", "Llamada 911")
+                            )
+                        )
+                    }
+                } else {
+                    _state.update { it.copy(touchConfigs = configs) }
+                }
+            }
+        }
+    }
+
+    fun updateTouchConfig(tapNumber: Int, action: SosAction) {
+        viewModelScope.launch(Dispatchers.IO) {
+            // 1. Obtener la acción que actualmente tiene asignada el slot destino
+            val targetConfig = touchConfigDao.getConfigForTaps(tapNumber)
+            val oldActionName = targetConfig?.actionName ?: ""
+            val oldActionLabel = targetConfig?.actionLabel ?: ""
+
+            // 2. Buscar si hay otro slot que ya tenga asignada la nueva acción
+            val sourceConfig = touchConfigDao.getConfigForAction(action.name)
+
+            if (sourceConfig != null && sourceConfig.tapNumber != tapNumber) {
+                // Intercambio (swap) para evitar duplicados:
+                // Asignamos la nueva acción al slot destino
+                touchConfigDao.insertConfig(
+                    TouchConfig(
+                        tapNumber = tapNumber,
+                        actionName = action.name,
+                        actionLabel = action.label
+                    )
+                )
+                // Asignamos la acción anterior del destino al slot de donde provenía la nueva acción
+                if (oldActionName.isNotEmpty()) {
+                    touchConfigDao.insertConfig(
+                        TouchConfig(
+                            tapNumber = sourceConfig.tapNumber,
+                            actionName = oldActionName,
+                            actionLabel = oldActionLabel
+                        )
+                    )
+                }
+            } else {
+                // Sin conflictos: simplemente actualizamos el slot destino
+                touchConfigDao.insertConfig(
+                    TouchConfig(
+                        tapNumber = tapNumber,
+                        actionName = action.name,
+                        actionLabel = action.label
+                    )
+                )
+            }
+        }
     }
 
     fun onSosPress() {
         countdownJob = viewModelScope.launch {
-            _state.update { it.copy(phase = AlertPhase.COUNTDOWN, countdownSeconds = 5) }
+            _state.update { 
+                it.copy(
+                    phase = AlertPhase.COUNTDOWN, 
+                    countdownSeconds = 5,
+                    activeActionLabel = "SOS General",
+                    activeActionName = "SOS_GENERAL"
+                ) 
+            }
             for (i in 4 downTo 0) {
                 delay(1000L)
                 _state.update { it.copy(countdownSeconds = i) }
@@ -59,7 +132,7 @@ class WatchViewModel(
                     startLocationTracking()
                 }
                 result.onFailure {
-                    _state.update { it.copy(phase = AlertPhase.IDLE) }
+                    _state.update { it.copy(phase = AlertPhase.IDLE, activeActionLabel = "", activeActionName = "") }
                 }
             }
         }
@@ -68,23 +141,24 @@ class WatchViewModel(
     fun onCancelCountdown() {
         countdownJob?.cancel()
         stopLocationTracking()
-        _state.update { it.copy(phase = AlertPhase.IDLE, countdownSeconds = 5, activeActionLabel = "") }
+        _state.update { it.copy(phase = AlertPhase.IDLE, countdownSeconds = 5, activeActionLabel = "", activeActionName = "") }
     }
 
     fun onSimulateTaps(taps: Int) {
         countdownJob = viewModelScope.launch {
             // PASO 1: Consulta Room para obtener qué acción tiene configurada ese número de toques
             val config = touchConfigDao.getConfigForTaps(taps)
+            android.util.Log.d("WatchViewModel", "Taps simulated: $taps. Loaded config: actionName=${config?.actionName}, actionLabel=${config?.actionLabel}")
             val actionLabel = config?.actionLabel ?: "SOS General"
             val actionName  = config?.actionName  ?: "SOS_GENERAL"
-            // Ejemplo con 3 toques: actionLabel="Alarma TV", actionName="ALARMA_TV"
 
             // PASO 2: Actualiza la pantalla con la cuenta regresiva y el nombre de la acción
             _state.update {
                 it.copy(
                     phase = AlertPhase.COUNTDOWN,
                     countdownSeconds = 5,
-                    activeActionLabel = actionLabel
+                    activeActionLabel = actionLabel,
+                    activeActionName = actionName
                 )
             }
             for (i in 4 downTo 0) {
@@ -93,7 +167,6 @@ class WatchViewModel(
             }
             if (_state.value.phase == AlertPhase.COUNTDOWN) {
                 // PASO 3: Envía la alerta por BLE con la dirección Y el código de acción
-                // El payload que llega al celular: "ACTION=ALARMA_TV|ADDRESS=Calle Morelos #48"
                 val result = triggerSos("Calle Morelos #48", actionName)
                 result.onSuccess { n ->
                     _state.update { it.copy(phase = AlertPhase.ACTIVE, isGpsActive = true, contactsNotified = n) }
@@ -101,7 +174,7 @@ class WatchViewModel(
                     startLocationTracking()
                 }
                 result.onFailure {
-                    _state.update { it.copy(phase = AlertPhase.IDLE) }
+                    _state.update { it.copy(phase = AlertPhase.IDLE, activeActionLabel = "", activeActionName = "") }
                 }
             }
         }
@@ -123,13 +196,47 @@ class WatchViewModel(
             cancelAlert()
             _state.update { it.copy(phase = AlertPhase.CANCELLED, isGpsActive = false) }
             delay(2000L)
-            _state.update { it.copy(phase = AlertPhase.IDLE) }
+            _state.update { it.copy(phase = AlertPhase.IDLE, activeActionLabel = "", activeActionName = "") }
         }
     }
 
     fun onLifeCheckNo() {
         _state.update { it.copy(phase = AlertPhase.ACTIVE) }
         startLifeCheckTimer() // Restart 2 minutes timer
+    }
+
+    fun onSwipeBackToCountdown() {
+        countdownJob?.cancel()
+        stopLocationTracking()
+        
+        val actionName = _state.value.activeActionName
+        val actionLabel = _state.value.activeActionLabel
+        
+        countdownJob = viewModelScope.launch {
+            _state.update {
+                it.copy(
+                    phase = AlertPhase.COUNTDOWN,
+                    countdownSeconds = 5,
+                    activeActionLabel = actionLabel,
+                    activeActionName = actionName
+                )
+            }
+            for (i in 4 downTo 0) {
+                delay(1000L)
+                _state.update { it.copy(countdownSeconds = i) }
+            }
+            if (_state.value.phase == AlertPhase.COUNTDOWN) {
+                val result = triggerSos("Calle Morelos #48", actionName)
+                result.onSuccess { n ->
+                    _state.update { it.copy(phase = AlertPhase.ACTIVE, isGpsActive = true, contactsNotified = n) }
+                    startLifeCheckTimer()
+                    startLocationTracking()
+                }
+                result.onFailure {
+                    _state.update { it.copy(phase = AlertPhase.IDLE, activeActionLabel = "", activeActionName = "") }
+                }
+            }
+        }
     }
 
     private fun startLocationTracking() {

@@ -31,10 +31,21 @@ import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import mx.edu.utng.cunasegurawear.domain.model.AlertState
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun StatusScreen(
     state: AlertState,
+    onSosClick: () -> Unit,
+    onSimulate1Tap: () -> Unit,
+    onSimulate2Taps: () -> Unit,
     onSimulate3Taps: () -> Unit,
     onSimulate4Taps: () -> Unit,
     onConfig: () -> Unit
@@ -79,6 +90,7 @@ fun StatusScreen(
                 modifier = Modifier
                     .size(90.dp)
                     .padding(bottom = 8.dp)
+                    .clickable { onSosClick() }
             ) {
                 // Pulsing safety field ring
                 Canvas(modifier = Modifier.fillMaxSize()) {
@@ -133,34 +145,71 @@ fun StatusScreen(
                 }
             }
 
-            Text("ESTADO SEGURO", color = primaryColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(
+                text = "ESTADO SEGURO",
+                color = primaryColor,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp
+            )
             
-            // Row with the buttons to simulate 3 and 4 taps
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
+            // Rows with the buttons to simulate taps (1 to 4)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(top = 4.dp)
             ) {
-                Button(
-                    onClick = onSimulate3Taps,
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = errorColor,
-                        contentColor = onErrorColor
-                    ),
-                    modifier = Modifier.size(width = 64.dp, height = 32.dp)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("3 Toques", fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    Button(
+                        onClick = onSimulate1Tap,
+                        colors = ButtonDefaults.buttonColors(
+                            backgroundColor = primaryColor,
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier.size(width = 64.dp, height = 28.dp)
+                    ) {
+                        Text("1 Toque", fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Button(
+                        onClick = onSimulate2Taps,
+                        colors = ButtonDefaults.buttonColors(
+                            backgroundColor = primaryColor,
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier.size(width = 64.dp, height = 28.dp)
+                    ) {
+                        Text("2 Toques", fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
 
-                Button(
-                    onClick = onSimulate4Taps,
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = errorColor,
-                        contentColor = onErrorColor
-                    ),
-                    modifier = Modifier.size(width = 64.dp, height = 32.dp)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("4 Toques", fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    Button(
+                        onClick = onSimulate3Taps,
+                        colors = ButtonDefaults.buttonColors(
+                            backgroundColor = errorColor,
+                            contentColor = onErrorColor
+                        ),
+                        modifier = Modifier.size(width = 64.dp, height = 28.dp)
+                    ) {
+                        Text("3 Toques", fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Button(
+                        onClick = onSimulate4Taps,
+                        colors = ButtonDefaults.buttonColors(
+                            backgroundColor = errorColor,
+                            contentColor = onErrorColor
+                        ),
+                        modifier = Modifier.size(width = 64.dp, height = 28.dp)
+                    ) {
+                        Text("4 Toques", fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
             

@@ -9,7 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-@Database(entities = [TouchConfig::class], version = 1, exportSchema = false)
+@Database(entities = [TouchConfig::class], version = 4, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun touchConfigDao(): TouchConfigDao
 
@@ -24,6 +24,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "cuna_segura_db"
                 )
+                .fallbackToDestructiveMigration()
                 .addCallback(AppDatabaseCallback(scope))
                 .build()
                 INSTANCE = instance
@@ -42,10 +43,10 @@ abstract class AppDatabase : RoomDatabase() {
                     val dao = database.touchConfigDao()
                     dao.insertConfigs(
                         listOf(
-                            TouchConfig(1, "MENSAJE_SMS", "Mensaje SMS"),
-                            TouchConfig(2, "UBICACION_TIEMPO_REAL", "Ubicación T-Real"),
-                            TouchConfig(3, "ALARMA_TV", "Alarma TV"),
-                            TouchConfig(4, "LLAMAR_911", "Llamar al 911")
+                            TouchConfig(1, "MENSAJE_SMS", "SMS de Ayuda"),
+                            TouchConfig(2, "UBICACION_TIEMPO_REAL", "Compartir GPS"),
+                            TouchConfig(3, "ALARMA_TV", "Bocina de Vecino"),
+                            TouchConfig(4, "LLAMAR_911", "Llamada 911")
                         )
                     )
                 }

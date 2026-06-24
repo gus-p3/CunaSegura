@@ -13,7 +13,7 @@ class TriggerSosUseCaseTest {
         val repo = FakeAlertRepository()
         repo.sendResult = Result.success(3)
         val useCase = TriggerSosUseCase(repo)
-        val result = useCase("Calle Morelos #48")
+        val result = useCase("Calle Morelos #48", "SOS_GENERAL")
         assertTrue(result.isSuccess)
         assertEquals(3, result.getOrNull())
     }
@@ -23,7 +23,7 @@ class TriggerSosUseCaseTest {
         val repo = FakeAlertRepository()
         repo.sendResult = Result.failure(Exception("BLE disconnected"))
         val useCase = TriggerSosUseCase(repo)
-        val result = useCase("Calle Morelos #48")
+        val result = useCase("Calle Morelos #48", "SOS_GENERAL")
         assertTrue(result.isFailure)
     }
 }

@@ -31,10 +31,22 @@ fun WatchNavHost(viewModel: WatchViewModel) {
         }
     }
 
+    LaunchedEffect(navController, state.phase) {
+        navController.currentBackStackEntryFlow.collect { entry ->
+            val route = entry.destination.route
+            if (route == "countdown" && state.phase == AlertPhase.ACTIVE) {
+                viewModel.onSwipeBackToCountdown()
+            }
+        }
+    }
+
     SwipeDismissableNavHost(navController, startDestination = "status") {
         composable("status") {
             StatusScreen(
                 state = state,
+                onSosClick = { viewModel.onSosPress() },
+                onSimulate1Tap = { viewModel.onSimulateTaps(1) },
+                onSimulate2Taps = { viewModel.onSimulateTaps(2) },
                 onSimulate3Taps = { viewModel.onSimulateTaps(3) },
                 onSimulate4Taps = { viewModel.onSimulateTaps(4) },
                 onConfig = { navController.navigate("config") }
@@ -42,7 +54,8 @@ fun WatchNavHost(viewModel: WatchViewModel) {
         }
         composable("config") {
             ConfigScreen(
-                actions = state.configuredActions,
+                configs = state.touchConfigs,
+                onUpdateConfig = { tapNumber, action -> viewModel.updateTouchConfig(tapNumber, action) },
                 onBack = { navController.popBackStack() }
             )
         }
