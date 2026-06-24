@@ -31,12 +31,21 @@ fun WatchNavHost(viewModel: WatchViewModel) {
         }
     }
 
-    LaunchedEffect(navController, state.phase) {
+    // Solo llama onSwipeBackToCountdown cuando el usuario hace swipe de regreso
+    // desde alert_active hacia countdown. Rastrear la ruta anterior evita que
+    // se dispare al navegar a countdown por primera vez (que cancelaba el countdown
+    // recién iniciado y lo relanzaba como SOS_GENERAL).
+    LaunchedEffect(navController) {
+        var previousRoute: String? = null
         navController.currentBackStackEntryFlow.collect { entry ->
-            val route = entry.destination.route
-            if (route == "countdown" && state.phase == AlertPhase.ACTIVE) {
+            val currentRoute = entry.destination.route
+            if (currentRoute == "countdown"
+                && previousRoute == "alert_active"
+                && state.phase == AlertPhase.ACTIVE
+            ) {
                 viewModel.onSwipeBackToCountdown()
             }
+            previousRoute = currentRoute
         }
     }
 

@@ -111,13 +111,13 @@ class WatchViewModel(
 
     fun onSosPress() {
         countdownJob = viewModelScope.launch {
-            _state.update { 
+            _state.update {
                 it.copy(
-                    phase = AlertPhase.COUNTDOWN, 
+                    phase = AlertPhase.COUNTDOWN,
                     countdownSeconds = 5,
                     activeActionLabel = "SOS General",
                     activeActionName = "SOS_GENERAL"
-                ) 
+                )
             }
             for (i in 4 downTo 0) {
                 delay(1000L)
@@ -146,11 +146,34 @@ class WatchViewModel(
 
     fun onSimulateTaps(taps: Int) {
         countdownJob = viewModelScope.launch {
-            // PASO 1: Consulta Room para obtener qué acción tiene configurada ese número de toques
-            val config = touchConfigDao.getConfigForTaps(taps)
-            android.util.Log.d("WatchViewModel", "Taps simulated: $taps. Loaded config: actionName=${config?.actionName}, actionLabel=${config?.actionLabel}")
-            val actionLabel = config?.actionLabel ?: "SOS General"
-            val actionName  = config?.actionName  ?: "SOS_GENERAL"
+            // PASO 1: Lee la configuración directamente del estado en memoria (ya cargado desde Room via Flow).
+            // Esto garantiza que siempre se use la acción que el usuario configuró en ConfigScreen,
+            // sin race conditions entre la query a BD y el arranque de la coroutine.
+            val config = _state.value.touchConfigs.find { it.tapNumber == taps }
+
+            // Fallback: si los configs aún no llegaron al estado (primer arranque muy rápido),
+            // consulta la BD directamente en el hilo de IO.
+            val resolvedConfig = config ?: kotlinx.coroutines.withContext(Dispatchers.IO) {
+                touchConfigDao.getConfigForTaps(taps)
+            }
+
+            // Fallback final: si ni en estado ni en BD hay config, usa los valores por defecto del enum
+            val actionLabel = resolvedConfig?.actionLabel ?: when (taps) {
+                1 -> SosAction.MENSAJE_SMS.label
+                2 -> SosAction.UBICACION_TIEMPO_REAL.label
+                3 -> SosAction.ALARMA_TV.label
+                4 -> SosAction.LLAMAR_911.label
+                else -> "SOS General"
+            }
+            val actionName = resolvedConfig?.actionName ?: when (taps) {
+                1 -> SosAction.MENSAJE_SMS.name
+                2 -> SosAction.UBICACION_TIEMPO_REAL.name
+                3 -> SosAction.ALARMA_TV.name
+                4 -> SosAction.LLAMAR_911.name
+                else -> "SOS_GENERAL"
+            }
+
+            android.util.Log.d("WatchViewModel", "Taps=$taps → acción=$actionName ($actionLabel) [fuente: ${if (config != null) "estado" else "BD/fallback"}]")
 
             // PASO 2: Actualiza la pantalla con la cuenta regresiva y el nombre de la acción
             _state.update {
@@ -166,7 +189,7 @@ class WatchViewModel(
                 _state.update { it.copy(countdownSeconds = i) }
             }
             if (_state.value.phase == AlertPhase.COUNTDOWN) {
-                // PASO 3: Envía la alerta por BLE con la dirección Y el código de acción
+                // PASO 3: Envía la alerta por BLE con la dirección Y el código de acción configurado
                 val result = triggerSos("Calle Morelos #48", actionName)
                 result.onSuccess { n ->
                     _state.update { it.copy(phase = AlertPhase.ACTIVE, isGpsActive = true, contactsNotified = n) }
@@ -208,10 +231,10 @@ class WatchViewModel(
     fun onSwipeBackToCountdown() {
         countdownJob?.cancel()
         stopLocationTracking()
-        
+
         val actionName = _state.value.activeActionName
         val actionLabel = _state.value.activeActionLabel
-        
+
         countdownJob = viewModelScope.launch {
             _state.update {
                 it.copy(
@@ -245,7 +268,7 @@ class WatchViewModel(
             locationTracker.locationFlow.collect { location ->
                 location?.let { loc ->
                     _state.update { it.copy(latitude = loc.latitude, longitude = loc.longitude) }
-                    
+
                     // Geocoding asynchronously on IO Thread
                     viewModelScope.launch(Dispatchers.IO) {
                         try {
