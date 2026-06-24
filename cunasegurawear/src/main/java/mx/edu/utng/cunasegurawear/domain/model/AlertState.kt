@@ -6,7 +6,8 @@ data class AlertState(
     val isGpsActive: Boolean = false,
     val contactsNotified: Int = 0,
     val gpsAddress: String = "",
-    val configuredActions: List<SosAction> = emptyList()
+    val configuredActions: List<SosAction> = emptyList(),
+    val activeActionLabel: String = ""
 )
 
 enum class AlertPhase {

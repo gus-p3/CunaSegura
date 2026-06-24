@@ -25,6 +25,7 @@ import androidx.wear.compose.material.Text
 @Composable
 fun CountdownScreen(
     seconds: Int,
+    activeActionLabel: String,
     onCancel: () -> Unit
 ) {
     val animatedSeconds by animateIntAsState(targetValue = seconds, label = "secondsAnimation")
@@ -43,10 +44,19 @@ fun CountdownScreen(
         ) {
             Text(
                 "ALERTA EN PROCESO",
-                fontSize = 11.sp,
+                fontSize = 10.sp,
                 color = Color(0xFFF59E0B), // Warning Orange Accent
                 fontWeight = FontWeight.SemiBold
             )
+            if (activeActionLabel.isNotEmpty()) {
+                Text(
+                    activeActionLabel.uppercase(),
+                    fontSize = 11.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 2.dp)
+                )
+            }
             
             Box(
                 contentAlignment = Alignment.Center,

@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -33,7 +34,8 @@ import mx.edu.utng.cunasegurawear.domain.model.AlertState
 @Composable
 fun StatusScreen(
     state: AlertState,
-    onTap: () -> Unit,
+    onSimulate3Taps: () -> Unit,
+    onSimulate4Taps: () -> Unit,
     onConfig: () -> Unit
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -62,7 +64,6 @@ fun StatusScreen(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
                 .fillMaxSize()
-                .clickable { onTap() }
                 .padding(8.dp)
         ) {
             Box(
@@ -125,7 +126,35 @@ fun StatusScreen(
             }
 
             Text("ESTADO SEGURO", color = Color(0xFF10B981), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text("PRESIONE PARA SOS", fontSize = 10.sp, color = Color.Gray, modifier = Modifier.padding(top = 2.dp))
+            
+            // Row with the buttons to simulate 3 and 4 taps
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = onSimulate3Taps,
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = Color(0xFFEF4444),
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier.size(width = 64.dp, height = 32.dp)
+                ) {
+                    Text("3 Toques", fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                }
+
+                Button(
+                    onClick = onSimulate4Taps,
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = Color(0xFFEF4444),
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier.size(width = 64.dp, height = 32.dp)
+                ) {
+                    Text("4 Toques", fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                }
+            }
             
             // Settings button to access config without relying on physical hardware button
             Button(

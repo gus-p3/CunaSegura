@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import mx.edu.utng.cunasegurawear.data.db.TouchConfigDao
 import mx.edu.utng.cunasegurawear.domain.model.AlertPhase
 import mx.edu.utng.cunasegurawear.domain.model.AlertState
 import mx.edu.utng.cunasegurawear.domain.usecase.CancelAlertUseCase
@@ -18,7 +19,8 @@ import mx.edu.utng.cunasegurawear.domain.usecase.TriggerSosUseCase
 class WatchViewModel(
     private val triggerSos: TriggerSosUseCase,
     private val cancelAlert: CancelAlertUseCase,
-    private val getSosActions: GetSosActionsUseCase
+    private val getSosActions: GetSosActionsUseCase,
+    private val touchConfigDao: TouchConfigDao
 ) : ViewModel() {
     private val _state = MutableStateFlow(AlertState())
     val state: StateFlow<AlertState> = _state.asStateFlow()
@@ -55,7 +57,35 @@ class WatchViewModel(
 
     fun onCancelCountdown() {
         countdownJob?.cancel()
-        _state.update { it.copy(phase = AlertPhase.IDLE, countdownSeconds = 5) }
+        _state.update { it.copy(phase = AlertPhase.IDLE, countdownSeconds = 5, activeActionLabel = "") }
+    }
+
+    fun onSimulateTaps(taps: Int) {
+        countdownJob = viewModelScope.launch {
+            val config = touchConfigDao.getConfigForTaps(taps)
+            val actionLabel = config?.actionLabel ?: "SOS General"
+            _state.update {
+                it.copy(
+                    phase = AlertPhase.COUNTDOWN,
+                    countdownSeconds = 5,
+                    activeActionLabel = actionLabel
+                )
+            }
+            for (i in 4 downTo 0) {
+                delay(1000L)
+                _state.update { it.copy(countdownSeconds = i) }
+            }
+            if (_state.value.phase == AlertPhase.COUNTDOWN) {
+                val result = triggerSos("Calle Morelos #48")
+                result.onSuccess { n ->
+                    _state.update { it.copy(phase = AlertPhase.ACTIVE, isGpsActive = true, contactsNotified = n) }
+                    startLifeCheckTimer()
+                }
+                result.onFailure {
+                    _state.update { it.copy(phase = AlertPhase.IDLE) }
+                }
+            }
+        }
     }
 
     private fun startLifeCheckTimer() {

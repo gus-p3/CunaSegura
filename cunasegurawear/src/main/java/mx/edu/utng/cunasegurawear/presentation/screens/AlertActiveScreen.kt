@@ -48,13 +48,13 @@ fun AlertActiveScreen(state: AlertState) {
         if (showMap) {
             MapCanvas()
         } else {
-            SosActiveContent(state.contactsNotified)
+            SosActiveContent(state.contactsNotified, state.activeActionLabel)
         }
     }
 }
 
 @Composable
-fun SosActiveContent(contactsNotified: Int) {
+fun SosActiveContent(contactsNotified: Int, activeActionLabel: String) {
     val infiniteTransition = rememberInfiniteTransition(label = "radar")
     val pulseScale1 by infiniteTransition.animateFloat(
         initialValue = 0.4f,
@@ -119,6 +119,15 @@ fun SosActiveContent(contactsNotified: Int) {
                 fontSize = 18.sp,
                 fontWeight = FontWeight.ExtraBold
             )
+            if (activeActionLabel.isNotEmpty()) {
+                Text(
+                    activeActionLabel.uppercase(),
+                    color = Color.White,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
             Text(
                 "ENVIANDO SEÑAL...",
                 fontSize = 10.sp,
