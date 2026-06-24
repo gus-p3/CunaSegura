@@ -1,7 +1,10 @@
 package mx.edu.utng.cunasegurawear.presentation.viewmodel
 
+import android.content.Context
+import android.location.Geocoder
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -9,7 +12,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Locale
 import mx.edu.utng.cunasegurawear.data.db.TouchConfigDao
+import mx.edu.utng.cunasegurawear.data.location.WatchLocationTracker
 import mx.edu.utng.cunasegurawear.domain.model.AlertPhase
 import mx.edu.utng.cunasegurawear.domain.model.AlertState
 import mx.edu.utng.cunasegurawear.domain.usecase.CancelAlertUseCase
@@ -20,12 +25,15 @@ class WatchViewModel(
     private val triggerSos: TriggerSosUseCase,
     private val cancelAlert: CancelAlertUseCase,
     private val getSosActions: GetSosActionsUseCase,
-    private val touchConfigDao: TouchConfigDao
+    private val touchConfigDao: TouchConfigDao,
+    private val locationTracker: WatchLocationTracker,
+    private val context: Context
 ) : ViewModel() {
     private val _state = MutableStateFlow(AlertState())
     val state: StateFlow<AlertState> = _state.asStateFlow()
     private var countdownJob: Job? = null
     private var lifeCheckJob: Job? = null
+    private var locationJob: Job? = null
 
     init {
         // Load initial actions from DataStore
@@ -47,6 +55,7 @@ class WatchViewModel(
                 result.onSuccess { n ->
                     _state.update { it.copy(phase = AlertPhase.ACTIVE, isGpsActive = true, contactsNotified = n) }
                     startLifeCheckTimer()
+                    startLocationTracking()
                 }
                 result.onFailure {
                     _state.update { it.copy(phase = AlertPhase.IDLE) }
@@ -57,6 +66,7 @@ class WatchViewModel(
 
     fun onCancelCountdown() {
         countdownJob?.cancel()
+        stopLocationTracking()
         _state.update { it.copy(phase = AlertPhase.IDLE, countdownSeconds = 5, activeActionLabel = "") }
     }
 
@@ -80,6 +90,7 @@ class WatchViewModel(
                 result.onSuccess { n ->
                     _state.update { it.copy(phase = AlertPhase.ACTIVE, isGpsActive = true, contactsNotified = n) }
                     startLifeCheckTimer()
+                    startLocationTracking()
                 }
                 result.onFailure {
                     _state.update { it.copy(phase = AlertPhase.IDLE) }
@@ -99,6 +110,7 @@ class WatchViewModel(
 
     fun onLifeCheckYes() {
         lifeCheckJob?.cancel()
+        stopLocationTracking()
         viewModelScope.launch {
             cancelAlert()
             _state.update { it.copy(phase = AlertPhase.CANCELLED, isGpsActive = false) }
@@ -110,5 +122,37 @@ class WatchViewModel(
     fun onLifeCheckNo() {
         _state.update { it.copy(phase = AlertPhase.ACTIVE) }
         startLifeCheckTimer() // Restart 2 minutes timer
+    }
+
+    private fun startLocationTracking() {
+        locationTracker.startTracking()
+        locationJob = viewModelScope.launch {
+            locationTracker.locationFlow.collect { location ->
+                location?.let { loc ->
+                    _state.update { it.copy(latitude = loc.latitude, longitude = loc.longitude) }
+                    
+                    // Geocoding asynchronously on IO Thread
+                    viewModelScope.launch(Dispatchers.IO) {
+                        try {
+                            val geocoder = Geocoder(context, Locale.getDefault())
+                            @Suppress("DEPRECATION")
+                            val addresses = geocoder.getFromLocation(loc.latitude, loc.longitude, 1)
+                            val addressLine = addresses?.firstOrNull()?.getAddressLine(0)
+                            val finalAddress = addressLine ?: "Lat: ${String.format(Locale.US, "%.5f", loc.latitude)}, Lon: ${String.format(Locale.US, "%.5f", loc.longitude)}"
+                            _state.update { it.copy(gpsAddress = finalAddress) }
+                        } catch (e: Exception) {
+                            val fallback = "Lat: ${String.format(Locale.US, "%.5f", loc.latitude)}, Lon: ${String.format(Locale.US, "%.5f", loc.longitude)}"
+                            _state.update { it.copy(gpsAddress = fallback) }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun stopLocationTracking() {
+        locationTracker.stopTracking()
+        locationJob?.cancel()
+        _state.update { it.copy(gpsAddress = "", latitude = 0.0, longitude = 0.0) }
     }
 }

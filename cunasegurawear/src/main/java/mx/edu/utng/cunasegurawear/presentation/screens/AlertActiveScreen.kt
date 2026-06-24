@@ -46,7 +46,7 @@ fun AlertActiveScreen(state: AlertState) {
         contentAlignment = Alignment.Center
     ) {
         if (showMap) {
-            MapCanvas()
+            MapCanvas(state.gpsAddress)
         } else {
             SosActiveContent(state.contactsNotified, state.activeActionLabel)
         }
@@ -145,7 +145,7 @@ fun SosActiveContent(contactsNotified: Int, activeActionLabel: String) {
 }
 
 @Composable
-fun MapCanvas() {
+fun MapCanvas(gpsAddress: String) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize()
@@ -155,9 +155,9 @@ fun MapCanvas() {
             fontSize = 11.sp,
             color = Color(0xFF10B981),
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 24.dp, bottom = 4.dp)
+            modifier = Modifier.padding(top = 18.dp, bottom = 2.dp)
         )
-        Canvas(modifier = Modifier.size(75.dp)) {
+        Canvas(modifier = Modifier.size(64.dp)) {
             // Draw dark-mode styled base map background
             drawCircle(color = Color(0xFF1E293B))
 
@@ -167,24 +167,33 @@ fun MapCanvas() {
             val streetColor = Color(0xFF334155)
 
             // Horizontal Streets
-            drawLine(streetColor, androidx.compose.ui.geometry.Offset(0f, height * 0.3f), androidx.compose.ui.geometry.Offset(width, height * 0.3f), strokeWidth = 3.dp.toPx())
-            drawLine(streetColor, androidx.compose.ui.geometry.Offset(0f, height * 0.7f), androidx.compose.ui.geometry.Offset(width, height * 0.7f), strokeWidth = 3.dp.toPx())
+            drawLine(streetColor, androidx.compose.ui.geometry.Offset(0f, height * 0.3f), androidx.compose.ui.geometry.Offset(width, height * 0.3f), strokeWidth = 2.dp.toPx())
+            drawLine(streetColor, androidx.compose.ui.geometry.Offset(0f, height * 0.7f), androidx.compose.ui.geometry.Offset(width, height * 0.7f), strokeWidth = 2.dp.toPx())
 
             // Vertical Streets
-            drawLine(streetColor, androidx.compose.ui.geometry.Offset(width * 0.3f, 0f), androidx.compose.ui.geometry.Offset(width * 0.3f, height), strokeWidth = 3.dp.toPx())
-            drawLine(streetColor, androidx.compose.ui.geometry.Offset(width * 0.7f, 0f), androidx.compose.ui.geometry.Offset(width * 0.7f, height), strokeWidth = 3.dp.toPx())
+            drawLine(streetColor, androidx.compose.ui.geometry.Offset(width * 0.3f, 0f), androidx.compose.ui.geometry.Offset(width * 0.3f, height), strokeWidth = 2.dp.toPx())
+            drawLine(streetColor, androidx.compose.ui.geometry.Offset(width * 0.7f, 0f), androidx.compose.ui.geometry.Offset(width * 0.7f, height), strokeWidth = 2.dp.toPx())
 
             // Draw a central pulsing GPS marker
             drawCircle(
                 color = Color(0xFF10B981).copy(alpha = 0.3f),
-                radius = 16f,
+                radius = 12f,
                 center = center
             )
             drawCircle(
                 color = Color(0xFFEF4444), // Red marker dot
-                radius = 6f,
+                radius = 4f,
                 center = center
             )
         }
+        
+        Text(
+            text = gpsAddress.ifEmpty { "Buscando satélites..." },
+            fontSize = 9.sp,
+            color = Color.LightGray,
+            modifier = Modifier.padding(top = 4.dp, start = 8.dp, end = 8.dp),
+            maxLines = 2,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
     }
 }
