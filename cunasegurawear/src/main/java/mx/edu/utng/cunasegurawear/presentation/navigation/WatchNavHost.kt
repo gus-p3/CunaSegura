@@ -35,7 +35,8 @@ fun WatchNavHost(viewModel: WatchViewModel) {
         composable("status") {
             StatusScreen(
                 state = state,
-                onTap = { viewModel.onSosPress() },
+                onSimulate3Taps = { viewModel.onSimulateTaps(3) },
+                onSimulate4Taps = { viewModel.onSimulateTaps(4) },
                 onConfig = { navController.navigate("config") }
             )
         }
@@ -48,6 +49,7 @@ fun WatchNavHost(viewModel: WatchViewModel) {
         composable("countdown") {
             CountdownScreen(
                 seconds = state.countdownSeconds,
+                activeActionLabel = state.activeActionLabel,
                 onCancel = { viewModel.onCancelCountdown() }
             )
         }

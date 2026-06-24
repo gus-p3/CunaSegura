@@ -19,12 +19,14 @@ import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
+import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
 
 @Composable
 fun CountdownScreen(
     seconds: Int,
+    activeActionLabel: String,
     onCancel: () -> Unit
 ) {
     val animatedSeconds by animateIntAsState(targetValue = seconds, label = "secondsAnimation")
@@ -32,6 +34,12 @@ fun CountdownScreen(
     // Smooth progress from 5s to 0s
     val progressTarget = if (seconds == 0) 0f else seconds / 5f
     val animatedProgress by animateFloatAsState(targetValue = progressTarget, label = "progressAnimation")
+
+    val primaryColor = MaterialTheme.colors.primary
+    val errorColor = MaterialTheme.colors.error
+    val secondaryVariantColor = MaterialTheme.colors.secondaryVariant
+    val onBackgroundColor = MaterialTheme.colors.onBackground
+    val onSecondaryColor = MaterialTheme.colors.onSecondary
 
     Scaffold {
         Column(
@@ -43,10 +51,19 @@ fun CountdownScreen(
         ) {
             Text(
                 "ALERTA EN PROCESO",
-                fontSize = 11.sp,
-                color = Color(0xFFF59E0B), // Warning Orange Accent
+                fontSize = 10.sp,
+                color = primaryColor, // Brand primary accent
                 fontWeight = FontWeight.SemiBold
             )
+            if (activeActionLabel.isNotEmpty()) {
+                Text(
+                    activeActionLabel.uppercase(),
+                    fontSize = 11.sp,
+                    color = onBackgroundColor,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 2.dp)
+                )
+            }
             
             Box(
                 contentAlignment = Alignment.Center,
@@ -58,23 +75,23 @@ fun CountdownScreen(
                     progress = animatedProgress,
                     modifier = Modifier.fillMaxSize(),
                     startAngle = 270f,
-                    indicatorColor = Color(0xFFEF4444), // Alert Red
-                    trackColor = Color.DarkGray.copy(alpha = 0.5f),
+                    indicatorColor = errorColor, // Alert Red from theme
+                    trackColor = onBackgroundColor.copy(alpha = 0.15f),
                     strokeWidth = 4.dp
                 )
                 Text(
                     text = "${animatedSeconds}s",
                     fontSize = 32.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Color.White
+                    color = onBackgroundColor
                 )
             }
 
             Button(
                 onClick = onCancel,
                 colors = ButtonDefaults.buttonColors(
-                    backgroundColor = Color(0xFF1E293B), // Premium dark gray-blue button
-                    contentColor = Color.White
+                    backgroundColor = secondaryVariantColor, // Dark button background
+                    contentColor = onSecondaryColor
                 ),
                 modifier = Modifier.size(width = 110.dp, height = 36.dp)
             ) {

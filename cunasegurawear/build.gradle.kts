@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.legacy.kapt)
 }
 
 android {
@@ -43,6 +44,16 @@ dependencies {
     implementation(libs.androidx.health.services.client)
     implementation(libs.androidx.core.splashscreen)
     
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    kapt(libs.androidx.room.compiler)
+    
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("org.jetbrains.kotlin:kotlin-metadata-jvm:2.4.0")
+    }
 }

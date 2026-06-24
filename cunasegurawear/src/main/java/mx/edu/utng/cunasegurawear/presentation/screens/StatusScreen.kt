@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
+import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
@@ -33,7 +35,8 @@ import mx.edu.utng.cunasegurawear.domain.model.AlertState
 @Composable
 fun StatusScreen(
     state: AlertState,
-    onTap: () -> Unit,
+    onSimulate3Taps: () -> Unit,
+    onSimulate4Taps: () -> Unit,
     onConfig: () -> Unit
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -56,13 +59,19 @@ fun StatusScreen(
         label = "pulseAlpha"
     )
 
+    val primaryColor = MaterialTheme.colors.primary
+    val primaryVariantColor = MaterialTheme.colors.primaryVariant
+    val errorColor = MaterialTheme.colors.error
+    val onErrorColor = MaterialTheme.colors.onError
+    val secondaryVariantColor = MaterialTheme.colors.secondaryVariant
+    val onSecondaryColor = MaterialTheme.colors.onSecondary
+
     Scaffold(timeText = { TimeText() }) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
                 .fillMaxSize()
-                .clickable { onTap() }
                 .padding(8.dp)
         ) {
             Box(
@@ -74,7 +83,7 @@ fun StatusScreen(
                 // Pulsing safety field ring
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     drawCircle(
-                        color = Color(0xFF10B981).copy(alpha = pulseAlpha),
+                        color = primaryColor.copy(alpha = pulseAlpha),
                         radius = (size.minDimension / 2) * pulseScale,
                         style = Stroke(width = 3.dp.toPx())
                     )
@@ -83,7 +92,7 @@ fun StatusScreen(
                 // Central shield button
                 Canvas(modifier = Modifier.size(64.dp)) {
                     val brush = Brush.radialGradient(
-                        colors = listOf(Color(0xFF34D399), Color(0xFF059669)),
+                        colors = listOf(primaryColor, primaryVariantColor),
                         center = center,
                         radius = size.minDimension / 2
                     )
@@ -124,15 +133,43 @@ fun StatusScreen(
                 }
             }
 
-            Text("ESTADO SEGURO", color = Color(0xFF10B981), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text("PRESIONE PARA SOS", fontSize = 10.sp, color = Color.Gray, modifier = Modifier.padding(top = 2.dp))
+            Text("ESTADO SEGURO", color = primaryColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            
+            // Row with the buttons to simulate 3 and 4 taps
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = onSimulate3Taps,
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = errorColor,
+                        contentColor = onErrorColor
+                    ),
+                    modifier = Modifier.size(width = 64.dp, height = 32.dp)
+                ) {
+                    Text("3 Toques", fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                }
+
+                Button(
+                    onClick = onSimulate4Taps,
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = errorColor,
+                        contentColor = onErrorColor
+                    ),
+                    modifier = Modifier.size(width = 64.dp, height = 32.dp)
+                ) {
+                    Text("4 Toques", fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                }
+            }
             
             // Settings button to access config without relying on physical hardware button
             Button(
                 onClick = onConfig,
                 colors = ButtonDefaults.buttonColors(
-                    backgroundColor = Color(0xFF1E293B),
-                    contentColor = Color.White
+                    backgroundColor = secondaryVariantColor,
+                    contentColor = onSecondaryColor
                 ),
                 modifier = Modifier
                     .padding(top = 8.dp)

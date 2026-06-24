@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
+import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
 
@@ -34,6 +35,13 @@ fun LifeCheckScreen(
     LaunchedEffect(Unit) {
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
     }
+
+    val primaryColor = MaterialTheme.colors.primary
+    val onPrimaryColor = MaterialTheme.colors.onPrimary
+    val errorColor = MaterialTheme.colors.error
+    val onErrorColor = MaterialTheme.colors.onError
+    val onBackgroundColor = MaterialTheme.colors.onBackground
+
     Scaffold {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -46,18 +54,18 @@ fun LifeCheckScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color.White.copy(alpha = 0.08f)) // Semitransparent floating card
+                    .background(onBackgroundColor.copy(alpha = 0.08f)) // Semitransparent floating card
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(
                     "CHECK DE VIDA",
                     fontSize = 11.sp,
-                    color = Color.LightGray,
+                    color = onBackgroundColor.copy(alpha = 0.7f),
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     "¿ESTÁS BIEN?",
-                    color = Color(0xFFEF4444), // Warning Red
+                    color = errorColor, // Warning Red from theme
                     fontSize = 18.sp,
                     fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.padding(top = 2.dp)
@@ -71,12 +79,12 @@ fun LifeCheckScreen(
                     .padding(top = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // SÍ button (green)
+                // SÍ button (brand primary cian)
                 Button(
                     onClick = onYes,
                     colors = ButtonDefaults.buttonColors(
-                        backgroundColor = Color(0xFF10B981),
-                        contentColor = Color.White
+                        backgroundColor = primaryColor,
+                        contentColor = onPrimaryColor
                     ),
                     modifier = Modifier
                         .weight(1f)
@@ -85,12 +93,12 @@ fun LifeCheckScreen(
                     Text("SÍ", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
                 }
 
-                // NO button (red)
+                // NO button (brand error red)
                 Button(
                     onClick = onNo,
                     colors = ButtonDefaults.buttonColors(
-                        backgroundColor = Color(0xFFEF4444),
-                        contentColor = Color.White
+                        backgroundColor = errorColor,
+                        contentColor = onErrorColor
                     ),
                     modifier = Modifier
                         .weight(1f)
