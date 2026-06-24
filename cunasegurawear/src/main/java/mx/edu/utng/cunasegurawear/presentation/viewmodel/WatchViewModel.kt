@@ -51,7 +51,8 @@ class WatchViewModel(
                 _state.update { it.copy(countdownSeconds = i) }
             }
             if (_state.value.phase == AlertPhase.COUNTDOWN) {
-                val result = triggerSos("Calle Morelos #48")
+                // SOS manual: no viene de la BD, usa acción genérica
+                val result = triggerSos("Calle Morelos #48", "SOS_GENERAL")
                 result.onSuccess { n ->
                     _state.update { it.copy(phase = AlertPhase.ACTIVE, isGpsActive = true, contactsNotified = n) }
                     startLifeCheckTimer()
@@ -72,8 +73,13 @@ class WatchViewModel(
 
     fun onSimulateTaps(taps: Int) {
         countdownJob = viewModelScope.launch {
+            // PASO 1: Consulta Room para obtener qué acción tiene configurada ese número de toques
             val config = touchConfigDao.getConfigForTaps(taps)
             val actionLabel = config?.actionLabel ?: "SOS General"
+            val actionName  = config?.actionName  ?: "SOS_GENERAL"
+            // Ejemplo con 3 toques: actionLabel="Alarma TV", actionName="ALARMA_TV"
+
+            // PASO 2: Actualiza la pantalla con la cuenta regresiva y el nombre de la acción
             _state.update {
                 it.copy(
                     phase = AlertPhase.COUNTDOWN,
@@ -86,7 +92,9 @@ class WatchViewModel(
                 _state.update { it.copy(countdownSeconds = i) }
             }
             if (_state.value.phase == AlertPhase.COUNTDOWN) {
-                val result = triggerSos("Calle Morelos #48")
+                // PASO 3: Envía la alerta por BLE con la dirección Y el código de acción
+                // El payload que llega al celular: "ACTION=ALARMA_TV|ADDRESS=Calle Morelos #48"
+                val result = triggerSos("Calle Morelos #48", actionName)
                 result.onSuccess { n ->
                     _state.update { it.copy(phase = AlertPhase.ACTIVE, isGpsActive = true, contactsNotified = n) }
                     startLifeCheckTimer()

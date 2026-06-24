@@ -26,6 +26,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
+import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import kotlinx.coroutines.delay
 import mx.edu.utng.cunasegurawear.domain.model.AlertState
@@ -42,7 +47,7 @@ fun AlertActiveScreen(state: AlertState) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .border(4.dp, Color(0xFFEF4444), CircleShape), // Neon Alert Red border
+            .border(4.dp, MaterialTheme.colors.error, CircleShape), // Alert Red border
         contentAlignment = Alignment.Center
     ) {
         if (showMap) {
@@ -94,16 +99,19 @@ fun SosActiveContent(contactsNotified: Int, activeActionLabel: String) {
         label = "alpha2"
     )
 
+    val errorColor = MaterialTheme.colors.error
+    val onBackgroundColor = MaterialTheme.colors.onBackground
+
     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
         // Radar Waves
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawCircle(
-                color = Color(0xFFEF4444).copy(alpha = pulseAlpha1),
+                color = errorColor.copy(alpha = pulseAlpha1),
                 radius = (size.minDimension / 2) * pulseScale1,
                 style = Stroke(width = 2.dp.toPx())
             )
             drawCircle(
-                color = Color(0xFFEF4444).copy(alpha = pulseAlpha2),
+                color = errorColor.copy(alpha = pulseAlpha2),
                 radius = (size.minDimension / 2) * pulseScale2,
                 style = Stroke(width = 2.dp.toPx())
             )
@@ -115,14 +123,14 @@ fun SosActiveContent(contactsNotified: Int, activeActionLabel: String) {
         ) {
             Text(
                 "SOS ACTIVO",
-                color = Color(0xFFEF4444),
+                color = errorColor,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.ExtraBold
             )
             if (activeActionLabel.isNotEmpty()) {
                 Text(
                     activeActionLabel.uppercase(),
-                    color = Color.White,
+                    color = onBackgroundColor,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 2.dp)
@@ -131,13 +139,13 @@ fun SosActiveContent(contactsNotified: Int, activeActionLabel: String) {
             Text(
                 "ENVIANDO SEÑAL...",
                 fontSize = 10.sp,
-                color = Color.White.copy(alpha = 0.7f),
+                color = onBackgroundColor.copy(alpha = 0.7f),
                 modifier = Modifier.padding(top = 4.dp)
             )
             Text(
                 "Contactos: $contactsNotified",
                 fontSize = 9.sp,
-                color = Color.Gray,
+                color = onBackgroundColor.copy(alpha = 0.5f),
                 modifier = Modifier.padding(top = 2.dp)
             )
         }
@@ -146,6 +154,41 @@ fun SosActiveContent(contactsNotified: Int, activeActionLabel: String) {
 
 @Composable
 fun MapCanvas(gpsAddress: String) {
+    val infiniteTransition = rememberInfiniteTransition(label = "mapAnimations")
+    val sweepAngle by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(4000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "sweepAngle"
+    )
+    val markerPulse by infiniteTransition.animateFloat(
+        initialValue = 4f,
+        targetValue = 16f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "markerPulse"
+    )
+    val markerAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.8f,
+        targetValue = 0.1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "markerAlpha"
+    )
+
+    val primaryColor = MaterialTheme.colors.primary
+    val secondaryVariantColor = MaterialTheme.colors.secondaryVariant
+    val errorColor = MaterialTheme.colors.error
+    val onSurfaceColor = MaterialTheme.colors.onSurface
+    val onBackgroundColor = MaterialTheme.colors.onBackground
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize()
@@ -153,36 +196,94 @@ fun MapCanvas(gpsAddress: String) {
         Text(
             "UBICACIÓN GPS",
             fontSize = 11.sp,
-            color = Color(0xFF10B981),
+            color = primaryColor,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = 18.dp, bottom = 2.dp)
         )
-        Canvas(modifier = Modifier.size(64.dp)) {
-            // Draw dark-mode styled base map background
-            drawCircle(color = Color(0xFF1E293B))
-
-            // Draw neon street grid
+        Canvas(modifier = Modifier.size(86.dp)) {
             val width = size.width
             val height = size.height
-            val streetColor = Color(0xFF334155)
 
-            // Horizontal Streets
-            drawLine(streetColor, androidx.compose.ui.geometry.Offset(0f, height * 0.3f), androidx.compose.ui.geometry.Offset(width, height * 0.3f), strokeWidth = 2.dp.toPx())
-            drawLine(streetColor, androidx.compose.ui.geometry.Offset(0f, height * 0.7f), androidx.compose.ui.geometry.Offset(width, height * 0.7f), strokeWidth = 2.dp.toPx())
+            // 1. Base map background circle
+            drawCircle(color = secondaryVariantColor.copy(alpha = 0.6f))
 
-            // Vertical Streets
-            drawLine(streetColor, androidx.compose.ui.geometry.Offset(width * 0.3f, 0f), androidx.compose.ui.geometry.Offset(width * 0.3f, height), strokeWidth = 2.dp.toPx())
-            drawLine(streetColor, androidx.compose.ui.geometry.Offset(width * 0.7f, 0f), androidx.compose.ui.geometry.Offset(width * 0.7f, height), strokeWidth = 2.dp.toPx())
+            // 2. Curvy blue river representation
+            val riverPath = Path().apply {
+                moveTo(0f, height * 0.2f)
+                cubicTo(width * 0.3f, height * 0.1f, width * 0.6f, height * 0.5f, width, height * 0.4f)
+            }
+            drawPath(
+                path = riverPath,
+                color = primaryColor.copy(alpha = 0.12f),
+                style = Stroke(width = 8.dp.toPx())
+            )
 
-            // Draw a central pulsing GPS marker
+            // 3. Main highway (thick route)
+            val mainRoad = Path().apply {
+                moveTo(0f, height * 0.8f)
+                quadraticTo(width * 0.5f, height * 0.7f, width, height * 0.1f)
+            }
+            drawPath(
+                path = mainRoad,
+                color = onSurfaceColor.copy(alpha = 0.22f),
+                style = Stroke(width = 4.dp.toPx())
+            )
+
+            // 4. Secondary streets (diagonal thin grid)
+            val streetColor = onSurfaceColor.copy(alpha = 0.1f)
+            drawLine(streetColor, Offset(width * 0.2f, 0f), Offset(width * 0.8f, height), strokeWidth = 1.5.dp.toPx())
+            drawLine(streetColor, Offset(0f, height * 0.6f), Offset(width, height * 0.9f), strokeWidth = 1.5.dp.toPx())
+            drawLine(streetColor, Offset(width * 0.5f, 0f), Offset(width * 0.1f, height), strokeWidth = 1.5.dp.toPx())
+
+            // 5. Compass markings (dashes around the rim)
+            val tickCount = 12
+            for (i in 0 until tickCount) {
+                val angleDeg = i * (360f / tickCount)
+                val angleRad = Math.toRadians(angleDeg.toDouble())
+                val outerX = center.x + (width / 2) * Math.cos(angleRad).toFloat()
+                val outerY = center.y + (height / 2) * Math.sin(angleRad).toFloat()
+                val innerX = center.x + (width / 2 - 4.dp.toPx()) * Math.cos(angleRad).toFloat()
+                val innerY = center.y + (height / 2 - 4.dp.toPx()) * Math.sin(angleRad).toFloat()
+                drawLine(
+                    color = primaryColor.copy(alpha = 0.35f),
+                    start = Offset(innerX, innerY),
+                    end = Offset(outerX, outerY),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
+
+            // 6. Surrounding pale beacon points (other users or references)
+            drawCircle(color = primaryColor.copy(alpha = 0.25f), radius = 2.dp.toPx(), center = Offset(width * 0.3f, height * 0.45f))
+            drawCircle(color = primaryColor.copy(alpha = 0.25f), radius = 2.dp.toPx(), center = Offset(width * 0.75f, height * 0.65f))
+
+            // 7. Radar sweep line and gradient tail
+            val sweepRad = Math.toRadians(sweepAngle.toDouble())
+            val sweepX = center.x + (width / 2) * Math.cos(sweepRad).toFloat()
+            val sweepY = center.y + (height / 2) * Math.sin(sweepRad).toFloat()
+            drawLine(
+                color = primaryColor.copy(alpha = 0.3f),
+                start = center,
+                end = Offset(sweepX, sweepY),
+                strokeWidth = 2.dp.toPx()
+            )
+            drawArc(
+                color = primaryColor.copy(alpha = 0.08f),
+                startAngle = sweepAngle - 30f,
+                sweepAngle = 30f,
+                useCenter = true
+            )
+
+            // 8. Pulsing accuracy ring
             drawCircle(
-                color = Color(0xFF10B981).copy(alpha = 0.3f),
-                radius = 12f,
+                color = primaryColor.copy(alpha = markerAlpha * 0.4f),
+                radius = markerPulse.dp.toPx(),
                 center = center
             )
+
+            // 9. Central GPS active marker dot
             drawCircle(
-                color = Color(0xFFEF4444), // Red marker dot
-                radius = 4f,
+                color = errorColor,
+                radius = 4.dp.toPx(),
                 center = center
             )
         }
@@ -190,7 +291,7 @@ fun MapCanvas(gpsAddress: String) {
         Text(
             text = gpsAddress.ifEmpty { "Buscando satélites..." },
             fontSize = 9.sp,
-            color = Color.LightGray,
+            color = onBackgroundColor.copy(alpha = 0.7f),
             modifier = Modifier.padding(top = 4.dp, start = 8.dp, end = 8.dp),
             maxLines = 2,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
