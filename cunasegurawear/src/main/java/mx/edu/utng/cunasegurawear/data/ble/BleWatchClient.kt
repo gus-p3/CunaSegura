@@ -14,7 +14,7 @@ class BleWatchClient(private val context: Context) {
         // El celular recibe este paquete y ejecuta la acción correspondiente.
         //
         // Formato del payload enviado por GATT:
-        //   "ACTION=ALARMA_TV|ADDRESS=Calle Morelos #48"
+        //   "ACTION=ALARMA_TV|ADDRESS=Ubicación actual"
         //
         // El celular parsea el ACTION y ejecuta:
         //   MENSAJE_SMS           → Envía SMS de auxilio a los contactos

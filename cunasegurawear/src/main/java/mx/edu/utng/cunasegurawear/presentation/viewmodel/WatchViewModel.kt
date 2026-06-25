@@ -125,7 +125,8 @@ class WatchViewModel(
             }
             if (_state.value.phase == AlertPhase.COUNTDOWN) {
                 // SOS manual: no viene de la BD, usa acción genérica
-                val result = triggerSos("Calle Morelos #48", "SOS_GENERAL")
+                val address = _state.value.gpsAddress.ifBlank { "Ubicación actual" }
+                val result = triggerSos(address, "SOS_GENERAL")
                 result.onSuccess { n ->
                     _state.update { it.copy(phase = AlertPhase.ACTIVE, isGpsActive = true, contactsNotified = n) }
                     startLifeCheckTimer()
@@ -190,7 +191,8 @@ class WatchViewModel(
             }
             if (_state.value.phase == AlertPhase.COUNTDOWN) {
                 // PASO 3: Envía la alerta por BLE con la dirección Y el código de acción configurado
-                val result = triggerSos("Calle Morelos #48", actionName)
+                val address = _state.value.gpsAddress.ifBlank { "Ubicación actual" }
+                val result = triggerSos(address, actionName)
                 result.onSuccess { n ->
                     _state.update { it.copy(phase = AlertPhase.ACTIVE, isGpsActive = true, contactsNotified = n) }
                     startLifeCheckTimer()
@@ -249,7 +251,8 @@ class WatchViewModel(
                 _state.update { it.copy(countdownSeconds = i) }
             }
             if (_state.value.phase == AlertPhase.COUNTDOWN) {
-                val result = triggerSos("Calle Morelos #48", actionName)
+                val address = _state.value.gpsAddress.ifBlank { "Ubicación actual" }
+                val result = triggerSos(address, actionName)
                 result.onSuccess { n ->
                     _state.update { it.copy(phase = AlertPhase.ACTIVE, isGpsActive = true, contactsNotified = n) }
                     startLifeCheckTimer()
@@ -277,9 +280,17 @@ class WatchViewModel(
                             val addresses = geocoder.getFromLocation(loc.latitude, loc.longitude, 1)
                             val addressLine = addresses?.firstOrNull()?.getAddressLine(0)
                             val finalAddress = addressLine ?: "Lat: ${String.format(Locale.US, "%.5f", loc.latitude)}, Lon: ${String.format(Locale.US, "%.5f", loc.longitude)}"
+                            
+                            // Enviamos la ubicación actualizada al teléfono por BLE
+                            triggerSos(finalAddress, _state.value.activeActionName)
+                            
                             _state.update { it.copy(gpsAddress = finalAddress) }
                         } catch (e: Exception) {
                             val fallback = "Lat: ${String.format(Locale.US, "%.5f", loc.latitude)}, Lon: ${String.format(Locale.US, "%.5f", loc.longitude)}"
+                            
+                            // Enviamos el fallback de coordenadas si falla el geocoder
+                            triggerSos(fallback, _state.value.activeActionName)
+
                             _state.update { it.copy(gpsAddress = fallback) }
                         }
                     }
