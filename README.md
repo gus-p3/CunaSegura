@@ -157,7 +157,19 @@ configurations.all {
 
 ## 📸 Capturas de Pantalla
 
-> Las capturas de pantalla de la aplicación en ejecución se encuentran en la carpeta [`/evidencias`](./evidencias/).
+> Capturas tomadas en el emulador **Wear OS (384×384)** con la app en ejecución real.
+
+| Pantalla | Descripción |
+|---|---|
+| ![Pantalla Principal](./evidencias/01_pantalla_principal.png) | **Estado Seguro** — Pantalla principal con los 4 botones de acción |
+| ![Cuenta Regresiva](./evidencias/02_wear_cuenta_regresiva.png) | **Cuenta Regresiva** — 5 segundos para cancelar (acción 3 toques) |
+| ![Alerta Activa GPS](./evidencias/03_wear_alerta_activa.png) | **Ubicación GPS** — Mapa con dirección en tiempo real (alerta activa) |
+| ![Compartiendo GPS](./evidencias/04_wear_estado_seguro.png) | **Compartiendo GPS** — Transmisión de ubicación a contactos |
+| ![Status Screen](./evidencias/06_wear_status_screen.png) | **Status Screen** — Pantalla principal completa con reloj |
+| ![Llamada 911](./evidencias/07_wear_cuenta_regresiva_911.png) | **Llamada 911** — Cuenta regresiva para llamada de emergencia (4 toques) |
+| ![GPS Alerta](./evidencias/08_wear_life_check.png) | **GPS Alerta Activa** — GPS con borde rojo (modo SOS activo) |
+
+> Las capturas también se encuentran en la carpeta [`/evidencias`](./evidencias/).
 
 ---
 
