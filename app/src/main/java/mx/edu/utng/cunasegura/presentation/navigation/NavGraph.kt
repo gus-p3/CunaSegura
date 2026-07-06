@@ -7,12 +7,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import mx.edu.utng.cunasegura.presentation.contacts.ContactsScreen
 import mx.edu.utng.cunasegura.presentation.login.LoginScreen
 import mx.edu.utng.cunasegura.presentation.splash.SplashScreen
+import mx.edu.utng.cunasegura.presentation.home.HomeScreen
+import mx.edu.utng.cunasegura.presentation.emergency.EmergencyActiveScreen
+import mx.edu.utng.cunasegura.presentation.devices.DevicesScreen
+import mx.edu.utng.cunasegura.presentation.watchconfig.WatchConfigScreen
+import mx.edu.utng.cunasegura.presentation.tvconfig.TvConfigScreen
 
 @Composable
 fun NavGraph(
@@ -45,31 +52,81 @@ fun NavGraph(
             )
         }
 
-        // TODO (Lizeth - ISSUE-05): reemplazar por HomeScreen real
+        // HomeScreen real
         composable(Screen.Home.route) {
-            PlaceholderScreen("Home — En construcción (ISSUE-05)")
+            HomeScreen(
+                onNavigateToEmergency = { alertaId ->
+                    navController.navigate(Screen.EmergencyActive.createRoute(alertaId))
+                },
+                onNavigateToContacts = {
+                    navController.navigate(Screen.Contacts.route)
+                },
+                onNavigateToDevices = {
+                    navController.navigate(Screen.Devices.route)
+                },
+                onNavigateToMap = {
+                    navController.navigate(Screen.CommunityMap.route)
+                }
+            )
         }
 
-        // TODO (Lizeth - ISSUE-07): reemplazar por EmergencyActiveScreen real
-        composable(Screen.EmergencyActive.route) {
-            PlaceholderScreen("Emergencia Activa — En construcción (ISSUE-07)")
+        // EmergencyActiveScreen real con argumento alertaId
+        composable(
+            route = Screen.EmergencyActive.route,
+            arguments = listOf(
+                navArgument("alertaId") {
+                    type = NavType.IntType
+                }
+            )
+        ) { backStackEntry ->
+            val alertaId = backStackEntry.arguments?.getInt("alertaId") ?: 0
+            EmergencyActiveScreen(
+                alertaId = alertaId,
+                onBackToHome = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                    }
+                }
+            )
         }
 
         composable(Screen.Contacts.route) {
             ContactsScreen()
         }
 
-        // TODO (Lizeth - ISSUE-09): reemplazar por DevicesScreen real
+        // DevicesScreen real
         composable(Screen.Devices.route) {
-            PlaceholderScreen("Dispositivos — En construcción (ISSUE-09)")
+            DevicesScreen(
+                onNavigateToHome = {
+                    navController.navigate(Screen.Home.route)
+                },
+                onNavigateToContacts = {
+                    navController.navigate(Screen.Contacts.route)
+                },
+                onNavigateToWatchConfig = {
+                    navController.navigate(Screen.WatchConfig.route)
+                },
+                onNavigateToTvConfig = {
+                    navController.navigate(Screen.TvConfig.route)
+                },
+                onNavigateToMap = {
+                    navController.navigate(Screen.CommunityMap.route)
+                }
+            )
         }
 
+        // WatchConfigScreen real
         composable(Screen.WatchConfig.route) {
-            PlaceholderScreen("En construcción — Sprint 2")
+            WatchConfigScreen(
+                onBack = { navController.popBackStack() }
+            )
         }
 
+        // TvConfigScreen real
         composable(Screen.TvConfig.route) {
-            PlaceholderScreen("En construcción — Sprint 2")
+            TvConfigScreen(
+                onBack = { navController.popBackStack() }
+            )
         }
 
         // TODO (Gustavo - ISSUE-10): reemplazar por CommunityMapScreen real

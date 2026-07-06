@@ -10,6 +10,10 @@ import mx.edu.utng.cunasegura.data.repository.ContactoRepositoryImpl
 import mx.edu.utng.cunasegura.domain.usecase.AgregarContactoUseCase
 import mx.edu.utng.cunasegura.domain.usecase.EliminarContactoUseCase
 import mx.edu.utng.cunasegura.domain.usecase.ObtenerContactosUseCase
+import mx.edu.utng.cunasegura.data.repository.AlertaRepositoryImpl
+import mx.edu.utng.cunasegura.domain.repository.IAlertaRepository
+import mx.edu.utng.cunasegura.domain.usecase.ActivarAlertaUseCase
+import mx.edu.utng.cunasegura.domain.usecase.CancelarAlertaUseCase
 
 /**
  * Contenedor manual de dependencias.
@@ -45,4 +49,17 @@ object AppModule {
 
     fun provideObtenerContactosUseCase(context: Context) =
         ObtenerContactosUseCase(provideContactoRepository(context))
+
+    // Alertas
+    fun provideAlertaRepository(context: Context): IAlertaRepository =
+        AlertaRepositoryImpl(
+            provideDatabase(context),
+            provideDatabase(context).alertaDao()
+        )
+
+    fun provideActivarAlertaUseCase(context: Context) =
+        ActivarAlertaUseCase(provideAlertaRepository(context))
+
+    fun provideCancelarAlertaUseCase(context: Context) =
+        CancelarAlertaUseCase(provideAlertaRepository(context))
 }
