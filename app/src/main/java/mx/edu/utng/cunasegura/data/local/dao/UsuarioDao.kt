@@ -25,4 +25,11 @@ interface UsuarioDao {
      */
     @Query("SELECT * FROM usuarios WHERE telefono = :telefono LIMIT 1")
     suspend fun buscarPorTelefono(telefono: String): UsuarioEntity?
+
+    /**
+     * Retorna el primer usuario registrado en el dispositivo (sesión activa).
+     * Como esta app maneja un solo usuario por teléfono, sirve para el Splash.
+     */
+    @Query("SELECT * FROM usuarios LIMIT 1")
+    suspend fun obtenerUsuarioActual(): UsuarioEntity?
 }
