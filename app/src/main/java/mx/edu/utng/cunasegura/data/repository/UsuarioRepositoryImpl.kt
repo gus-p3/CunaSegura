@@ -31,6 +31,10 @@ class UsuarioRepositoryImpl(
         return usuarioDao.buscarPorTelefono(telefono)?.toDomain()
     }
 
+    override suspend fun obtenerUsuarioActual(): Usuario? {
+        return usuarioDao.obtenerUsuarioActual()?.toDomain()
+    }
+
     // -------------------------------------------------------------------------
     // Mappers
     // -------------------------------------------------------------------------

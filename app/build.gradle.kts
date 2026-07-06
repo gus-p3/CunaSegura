@@ -47,12 +47,17 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.core.ktx)
+
 
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    // Navigation
+    implementation(libs.androidx.navigation.compose)
+
+// ViewModel + Compose
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)

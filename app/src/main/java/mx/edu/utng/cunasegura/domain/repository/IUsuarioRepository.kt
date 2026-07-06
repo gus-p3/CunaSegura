@@ -19,4 +19,7 @@ interface IUsuarioRepository {
      * @return [Usuario] si existe, `null` si no hay registro con ese número.
      */
     suspend fun buscarPorTelefono(telefono: String): Usuario?
+
+    /** Retorna el usuario de la sesión activa en este dispositivo, o null si no hay ninguno. */
+    suspend fun obtenerUsuarioActual(): Usuario?
 }

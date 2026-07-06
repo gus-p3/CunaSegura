@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
 import mx.edu.utng.cunasegura.data.local.entity.ContactoEmergenciaEntity
 
 /**
@@ -33,4 +34,15 @@ interface ContactoDao {
     /** Elimina todos los contactos de un usuario dado su [usuarioId]. */
     @Query("DELETE FROM contactos_emergencia WHERE usuarioId = :usuarioId")
     suspend fun eliminarTodosPorUsuario(usuarioId: Int)
+
+    /**
+     * Versión reactiva: emite automáticamente la lista actualizada
+     * cada vez que se inserta o elimina un contacto de este usuario.
+     */
+    @Query("SELECT * FROM contactos_emergencia WHERE usuarioId = :usuarioId ORDER BY creadoEn ASC")
+    fun observarPorUsuario(usuarioId: Int): Flow<List<ContactoEmergenciaEntity>>
+
+    /** Elimina un contacto directamente por su id (más simple que @Delete con la entidad completa). */
+    @Query("DELETE FROM contactos_emergencia WHERE id = :id")
+    suspend fun eliminarContactoPorId(id: Int)
 }
