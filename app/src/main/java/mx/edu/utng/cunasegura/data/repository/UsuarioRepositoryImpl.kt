@@ -31,6 +31,14 @@ class UsuarioRepositoryImpl(
         return usuarioDao.buscarPorTelefono(telefono)?.toDomain()
     }
 
+    override suspend fun validarAdmin(correo: String, password: String): Usuario? {
+        return usuarioDao.validarAdmin(correo, password)?.toDomain()
+    }
+
+    override suspend fun obtenerTodosLosUsuarios(): List<Usuario> {
+        return usuarioDao.obtenerTodosLosUsuarios().map { it.toDomain() }
+    }
+
     override suspend fun obtenerUsuarioActual(): Usuario? {
         return usuarioDao.obtenerUsuarioActual()?.toDomain()
     }
@@ -48,6 +56,8 @@ class UsuarioRepositoryImpl(
             id = idExistente ?: this.id,
             nombre = this.nombre,
             telefono = this.telefono,
+            correo = this.correo,
+            password = this.password,
             consentimientoGps = this.consentimientoGps,
             latActual = this.latActual,
             lonActual = this.lonActual,
@@ -65,6 +75,8 @@ class UsuarioRepositoryImpl(
             id = this.id,
             nombre = this.nombre,
             telefono = this.telefono,
+            correo = this.correo,
+            password = this.password,
             consentimientoGps = this.consentimientoGps,
             latActual = this.latActual,
             lonActual = this.lonActual,

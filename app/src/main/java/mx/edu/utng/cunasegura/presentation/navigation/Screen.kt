@@ -15,4 +15,5 @@ sealed class Screen(val route: String) {
     object WatchConfig : Screen("watch_config")
     object TvConfig : Screen("tv_config")
     object CommunityMap : Screen("community_map")
+    object AdminPanel : Screen("admin_panel")
 }

@@ -14,6 +14,7 @@ import mx.edu.utng.cunasegura.data.repository.AlertaRepositoryImpl
 import mx.edu.utng.cunasegura.domain.repository.IAlertaRepository
 import mx.edu.utng.cunasegura.domain.usecase.ActivarAlertaUseCase
 import mx.edu.utng.cunasegura.domain.usecase.CancelarAlertaUseCase
+import mx.edu.utng.cunasegura.domain.usecase.ValidarAdminUseCase
 
 /**
  * Contenedor manual de dependencias.
@@ -61,4 +62,7 @@ object AppModule {
 
     fun provideCancelarAlertaUseCase(context: Context) =
         CancelarAlertaUseCase(provideAlertaRepository(context))
+
+    fun provideValidarAdminUseCase(context: Context) =
+        ValidarAdminUseCase(provideUsuarioRepository(context))
 }

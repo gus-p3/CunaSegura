@@ -1,17 +1,13 @@
 package mx.edu.utng.cunasegura.presentation.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import mx.edu.utng.cunasegura.presentation.admin.AdminPanelScreen
 import mx.edu.utng.cunasegura.presentation.contacts.ContactsScreen
 import mx.edu.utng.cunasegura.presentation.login.LoginScreen
 import mx.edu.utng.cunasegura.presentation.splash.SplashScreen
@@ -39,6 +35,11 @@ fun NavGraph(
                     navController.navigate(Screen.Login.route) {
                         popUpTo(Screen.Splash.route) { inclusive = true }
                     }
+                },
+                onNavigateToAdmin = {
+                    navController.navigate(Screen.AdminPanel.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
                 }
             )
         }
@@ -49,11 +50,27 @@ fun NavGraph(
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
+                },
+                onAdminSuccess = {
+                    navController.navigate(Screen.AdminPanel.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
                 }
             )
         }
 
-        // HomeScreen real
+        // Panel de administración (solo admins)
+        composable(Screen.AdminPanel.route) {
+            AdminPanelScreen(
+                onLogout = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.AdminPanel.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // HomeScreen
         composable(Screen.Home.route) {
             HomeScreen(
                 onNavigateToEmergency = { alertaId ->
@@ -71,7 +88,7 @@ fun NavGraph(
             )
         }
 
-        // EmergencyActiveScreen real con argumento alertaId
+        // EmergencyActiveScreen con argumento alertaId
         composable(
             route = Screen.EmergencyActive.route,
             arguments = listOf(
@@ -95,7 +112,6 @@ fun NavGraph(
             ContactsScreen()
         }
 
-        // DevicesScreen real
         composable(Screen.Devices.route) {
             DevicesScreen(
                 onNavigateToHome = {
@@ -116,14 +132,12 @@ fun NavGraph(
             )
         }
 
-        // WatchConfigScreen real
         composable(Screen.WatchConfig.route) {
             WatchConfigScreen(
                 onBack = { navController.popBackStack() }
             )
         }
 
-        // TvConfigScreen real
         composable(Screen.TvConfig.route) {
             TvConfigScreen(
                 onBack = { navController.popBackStack() }
@@ -146,12 +160,5 @@ fun NavGraph(
                 }
             )
         }
-    }
-}
-
-@Composable
-private fun PlaceholderScreen(texto: String) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(texto)
     }
 }

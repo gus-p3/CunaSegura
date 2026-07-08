@@ -43,7 +43,7 @@ fun ContactsScreen() {
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { viewModel.onShowAddSheet(true) },
+                onClick = { if (puedeAgregar) viewModel.onShowAddSheet(true) },
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = { Text(if (puedeAgregar) "Añadir contacto" else "Máximo 5 contactos") },
                 containerColor = if (puedeAgregar) AzulCunaSegura else Color.Gray
@@ -186,7 +186,7 @@ private fun AddContactDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Relación") },
-                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                        modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
                     )
                     ExposedDropdownMenu(
                         expanded = expandedRelacion,
