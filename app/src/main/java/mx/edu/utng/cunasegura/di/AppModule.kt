@@ -53,7 +53,6 @@ object AppModule {
     // Alertas
     fun provideAlertaRepository(context: Context): IAlertaRepository =
         AlertaRepositoryImpl(
-            provideDatabase(context),
             provideDatabase(context).alertaDao()
         )
 
