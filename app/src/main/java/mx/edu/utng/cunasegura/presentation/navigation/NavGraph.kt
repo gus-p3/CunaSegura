@@ -20,6 +20,7 @@ import mx.edu.utng.cunasegura.presentation.emergency.EmergencyActiveScreen
 import mx.edu.utng.cunasegura.presentation.devices.DevicesScreen
 import mx.edu.utng.cunasegura.presentation.watchconfig.WatchConfigScreen
 import mx.edu.utng.cunasegura.presentation.tvconfig.TvConfigScreen
+import mx.edu.utng.cunasegura.presentation.map.CommunityMapScreen
 
 @Composable
 fun NavGraph(
@@ -129,9 +130,21 @@ fun NavGraph(
             )
         }
 
-        // TODO (Gustavo - ISSUE-10): reemplazar por CommunityMapScreen real
+        // CommunityMapScreen real (ISSUE-10)
         composable(Screen.CommunityMap.route) {
-            PlaceholderScreen("Mapa Comunitario — En construcción (ISSUE-10)")
+            CommunityMapScreen(
+                onNavigateToHome = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Home.route) { inclusive = false }
+                    }
+                },
+                onNavigateToContacts = {
+                    navController.navigate(Screen.Contacts.route)
+                },
+                onNavigateToDevices = {
+                    navController.navigate(Screen.Devices.route)
+                }
+            )
         }
     }
 }

@@ -2,6 +2,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Permisos de red (necesarios para Google Maps y futuras funciones de red) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Permisos de ubicación -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Permiso de llamada telefónica (botones de marcador en mapa y contactos) -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -11,6 +21,16 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.CunaSegura">
+
+        <!--
+            API Key de Google Maps SDK for Android.
+            IMPORTANTE: Reemplazar "REEMPLAZAR_CON_API_KEY_REAL" con la clave
+            obtenida en Google Cloud Console (Maps SDK for Android habilitado).
+        -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="REEMPLAZAR_CON_API_KEY_REAL" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -19,7 +39,6 @@
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
