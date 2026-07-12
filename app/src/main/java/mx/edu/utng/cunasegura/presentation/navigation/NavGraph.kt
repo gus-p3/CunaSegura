@@ -18,10 +18,21 @@ import mx.edu.utng.cunasegura.presentation.watchconfig.WatchConfigScreen
 import mx.edu.utng.cunasegura.presentation.tvconfig.TvConfigScreen
 import mx.edu.utng.cunasegura.presentation.map.CommunityMapScreen
 
+import mx.edu.utng.cunasegura.presentation.login.RegisterScreen
+
 @Composable
 fun NavGraph(
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    startAlertaId: Int? = null,
+    onAlertaHandled: () -> Unit = {}
 ) {
+    androidx.compose.runtime.LaunchedEffect(startAlertaId) {
+        if (startAlertaId != null) {
+            navController.navigate(Screen.EmergencyActive.createRoute(startAlertaId))
+            onAlertaHandled()
+        }
+    }
+
     NavHost(navController = navController, startDestination = Screen.Splash.route) {
 
         composable(Screen.Splash.route) {
@@ -55,37 +66,34 @@ fun NavGraph(
                     navController.navigate(Screen.AdminPanel.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
+                },
+                onRegisterClick = {
+                    navController.navigate(Screen.Register.route)
+                }
+            )
+        }
+
+        composable(Screen.Register.route) {
+            RegisterScreen(
+                onRegisterSuccess = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Register.route) { inclusive = true }
+                    }
+                },
+                onBackClick = {
+                    navController.popBackStack()
                 }
             )
         }
 
         // Panel de administración (solo admins)
         composable(Screen.AdminPanel.route) {
-            AdminPanelScreen(
-                onLogout = {
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.AdminPanel.route) { inclusive = true }
-                    }
-                }
-            )
+            mx.edu.utng.cunasegura.presentation.main.MainAdminScreen(rootNavController = navController)
         }
 
-        // HomeScreen
+        // MainUserScreen handles Home, Contacts, Devices, and Map internally
         composable(Screen.Home.route) {
-            HomeScreen(
-                onNavigateToEmergency = { alertaId ->
-                    navController.navigate(Screen.EmergencyActive.createRoute(alertaId))
-                },
-                onNavigateToContacts = {
-                    navController.navigate(Screen.Contacts.route)
-                },
-                onNavigateToDevices = {
-                    navController.navigate(Screen.Devices.route)
-                },
-                onNavigateToMap = {
-                    navController.navigate(Screen.CommunityMap.route)
-                }
-            )
+            mx.edu.utng.cunasegura.presentation.main.MainUserScreen(rootNavController = navController)
         }
 
         // EmergencyActiveScreen con argumento alertaId
@@ -108,30 +116,6 @@ fun NavGraph(
             )
         }
 
-        composable(Screen.Contacts.route) {
-            ContactsScreen()
-        }
-
-        composable(Screen.Devices.route) {
-            DevicesScreen(
-                onNavigateToHome = {
-                    navController.navigate(Screen.Home.route)
-                },
-                onNavigateToContacts = {
-                    navController.navigate(Screen.Contacts.route)
-                },
-                onNavigateToWatchConfig = {
-                    navController.navigate(Screen.WatchConfig.route)
-                },
-                onNavigateToTvConfig = {
-                    navController.navigate(Screen.TvConfig.route)
-                },
-                onNavigateToMap = {
-                    navController.navigate(Screen.CommunityMap.route)
-                }
-            )
-        }
-
         composable(Screen.WatchConfig.route) {
             WatchConfigScreen(
                 onBack = { navController.popBackStack() }
@@ -141,23 +125,6 @@ fun NavGraph(
         composable(Screen.TvConfig.route) {
             TvConfigScreen(
                 onBack = { navController.popBackStack() }
-            )
-        }
-
-        // CommunityMapScreen real (ISSUE-10)
-        composable(Screen.CommunityMap.route) {
-            CommunityMapScreen(
-                onNavigateToHome = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Home.route) { inclusive = false }
-                    }
-                },
-                onNavigateToContacts = {
-                    navController.navigate(Screen.Contacts.route)
-                },
-                onNavigateToDevices = {
-                    navController.navigate(Screen.Devices.route)
-                }
             )
         }
     }

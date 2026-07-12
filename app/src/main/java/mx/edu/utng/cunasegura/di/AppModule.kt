@@ -15,6 +15,7 @@ import mx.edu.utng.cunasegura.domain.repository.IAlertaRepository
 import mx.edu.utng.cunasegura.domain.usecase.ActivarAlertaUseCase
 import mx.edu.utng.cunasegura.domain.usecase.CancelarAlertaUseCase
 import mx.edu.utng.cunasegura.domain.usecase.ValidarAdminUseCase
+import mx.edu.utng.cunasegura.domain.usecase.LimpiarSesionLocalUseCase
 
 /**
  * Contenedor manual de dependencias.
@@ -26,7 +27,7 @@ object AppModule {
         AppDatabase.getInstance(context)
 
     fun provideUsuarioRepository(context: Context) =
-        UsuarioRepositoryImpl(provideDatabase(context).usuarioDao())
+        UsuarioRepositoryImpl()
 
     fun provideGuardarUsuarioUseCase(context: Context) =
         GuardarUsuarioUseCase(provideUsuarioRepository(context))
@@ -37,10 +38,11 @@ object AppModule {
     fun provideObtenerUsuarioActualUseCase(context: Context) =
        ObtenerUsuarioActualUseCase(provideUsuarioRepository(context))
 
+    fun provideLimpiarSesionLocalUseCase(context: Context) =
+        LimpiarSesionLocalUseCase(provideUsuarioRepository(context))
+
     fun provideContactoRepository(context: Context) =
-        ContactoRepositoryImpl(
-            provideDatabase(context).contactoDao()
-        )
+        ContactoRepositoryImpl()
 
     fun provideAgregarContactoUseCase(context: Context) =
         AgregarContactoUseCase(provideContactoRepository(context))
@@ -65,4 +67,7 @@ object AppModule {
 
     fun provideValidarAdminUseCase(context: Context) =
         ValidarAdminUseCase(provideUsuarioRepository(context))
+
+    fun provideValidarLoginUseCase(context: Context) =
+        mx.edu.utng.cunasegura.domain.usecase.ValidarLoginUseCase(provideUsuarioRepository(context))
 }

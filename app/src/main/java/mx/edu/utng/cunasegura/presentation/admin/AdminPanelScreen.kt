@@ -43,7 +43,7 @@ fun AdminPanelScreen(
     val totalUsuarios by viewModel.totalUsuarios.collectAsState()
     val adminActual by viewModel.adminActual.collectAsState()
 
-    val vecinos = usuarios.filter { !it.esAdminGlobal }
+    val vecinos = usuarios.filter { it.rol != "admin" }
     val vectinosActivos = vecinos.filter { it.estado == "activo" }
 
     Scaffold(

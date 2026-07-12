@@ -8,7 +8,7 @@ sealed class Screen(val route: String) {
     object Login : Screen("login")
     object Home : Screen("home")
     object EmergencyActive : Screen("emergency_active/{alertaId}") {
-        fun createRoute(alertaId: Long) = "emergency_active/$alertaId"
+        fun createRoute(alertaId: Int) = "emergency_active/$alertaId"
     }
     object Contacts : Screen("contacts")
     object Devices : Screen("devices")
@@ -16,4 +16,5 @@ sealed class Screen(val route: String) {
     object TvConfig : Screen("tv_config")
     object CommunityMap : Screen("community_map")
     object AdminPanel : Screen("admin_panel")
+    object Register : Screen("register")
 }

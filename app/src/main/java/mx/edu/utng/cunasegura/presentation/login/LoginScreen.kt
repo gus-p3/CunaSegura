@@ -1,8 +1,5 @@
 package mx.edu.utng.cunasegura.presentation.login
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -34,14 +31,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-private val AzulOscuro = Color(0xFF1F4E79)
-private val AzulMedio = Color(0xFF2E6DA4)
-private val AzulClaro = Color(0xFF4A90D9)
+// MaterialTheme colors will be used instead of hardcoded colors
 
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
-    onAdminSuccess: () -> Unit
+    onAdminSuccess: () -> Unit,
+    onRegisterClick: () -> Unit
 ) {
     val context = LocalContext.current
     val viewModel: LoginViewModel = viewModel(
@@ -57,13 +53,24 @@ fun LoginScreen(
     LaunchedEffect(uiState.navigateToAdmin) {
         if (uiState.navigateToAdmin) onAdminSuccess()
     }
+    LaunchedEffect(uiState.navigateToRegister) {
+        if (uiState.navigateToRegister) {
+            onRegisterClick()
+            viewModel.onRegisterNavigated()
+        }
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .imePadding()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(AzulOscuro, AzulMedio, AzulClaro)
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.primaryContainer,
+                        MaterialTheme.colorScheme.secondary
+                    )
                 )
             )
     ) {
@@ -95,7 +102,7 @@ fun LoginScreen(
                     Icon(
                         imageVector = Icons.Default.Shield,
                         contentDescription = "Logo Cuna Segura",
-                        tint = AzulOscuro,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(52.dp)
                     )
                 }
@@ -136,106 +143,56 @@ fun LoginScreen(
                     modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // ── Toggle modo admin / vecino ────────────────────────
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = if (uiState.esAdmin) "Acceso Administrador" else "Acceso Vecino",
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = AzulOscuro
-                        )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { viewModel.onToggleAdminMode() }
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Shield,
-                                contentDescription = "Modo admin",
-                                tint = if (uiState.esAdmin) AzulOscuro else Color.Gray,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "Admin",
-                                fontSize = 12.sp,
-                                color = if (uiState.esAdmin) AzulOscuro else Color.Gray,
-                                fontWeight = if (uiState.esAdmin) FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
-                    }
+                    Text(
+                        text = "Iniciar Sesión",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // ── Campos según modo ─────────────────────────────────
-                    AnimatedVisibility(visible = !uiState.esAdmin, enter = fadeIn(), exit = fadeOut()) {
-                        Column {
-                            // Campo teléfono (modo vecino)
-                            OutlinedTextField(
-                                value = uiState.phoneNumber,
-                                onValueChange = { viewModel.onPhoneNumberChange(it) },
-                                label = { Text("Número de teléfono") },
-                                leadingIcon = {
-                                    Icon(Icons.Default.Person, contentDescription = null, tint = AzulMedio)
-                                },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                                singleLine = true,
-                                isError = uiState.errorMessage != null && !uiState.esAdmin,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                        }
-                    }
-
-                    AnimatedVisibility(visible = uiState.esAdmin, enter = fadeIn(), exit = fadeOut()) {
-                        Column {
-                            // Campo correo (modo admin)
-                            OutlinedTextField(
-                                value = uiState.correo,
-                                onValueChange = { viewModel.onCorreoChange(it) },
-                                label = { Text("Correo electrónico") },
-                                leadingIcon = {
-                                    Icon(Icons.Default.Person, contentDescription = null, tint = AzulOscuro)
-                                },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                                singleLine = true,
-                                isError = uiState.errorMessage != null,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            // Campo contraseña
-                            OutlinedTextField(
-                                value = uiState.password,
-                                onValueChange = { viewModel.onPasswordChange(it) },
-                                label = { Text("Contraseña") },
-                                leadingIcon = {
-                                    Icon(Icons.Default.Lock, contentDescription = null, tint = AzulOscuro)
-                                },
-                                trailingIcon = {
-                                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                        Icon(
-                                            if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                            contentDescription = if (passwordVisible) "Ocultar" else "Mostrar"
-                                        )
-                                    }
-                                },
-                                visualTransformation = if (passwordVisible) VisualTransformation.None
-                                                      else PasswordVisualTransformation(),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                                singleLine = true,
-                                isError = uiState.errorMessage != null,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                        }
-                    }
+                    // Campo correo
+                    OutlinedTextField(
+                        value = uiState.correo,
+                        onValueChange = { viewModel.onCorreoChange(it) },
+                        label = { Text("Correo electrónico") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        singleLine = true,
+                        isError = uiState.errorMessage != null,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    // Campo contraseña
+                    OutlinedTextField(
+                        value = uiState.password,
+                        onValueChange = { viewModel.onPasswordChange(it) },
+                        label = { Text("Contraseña") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        },
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (passwordVisible) "Ocultar" else "Mostrar"
+                                )
+                            }
+                        },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None
+                                                else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        singleLine = true,
+                        isError = uiState.errorMessage != null,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
 
                     // ── Mensaje de error ──────────────────────────────────
                     if (uiState.errorMessage != null) {
@@ -256,7 +213,7 @@ fun LoginScreen(
                         onClick = { viewModel.onLoginClick() },
                         enabled = !uiState.isLoading,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (uiState.esAdmin) AzulOscuro else AzulMedio
+                            containerColor = MaterialTheme.colorScheme.primary
                         ),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
@@ -271,24 +228,25 @@ fun LoginScreen(
                             )
                         } else {
                             Text(
-                                text = if (uiState.esAdmin) "Ingresar como Administrador"
-                                       else "Ingresar con número de Teléfono",
+                                text = "Ingresar",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
+                                fontSize = 16.sp
                             )
                         }
                     }
 
-                    // ── Tip de admin (solo modo admin) ────────────────────
-                    if (uiState.esAdmin) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = "🛡️ Acceso exclusivo para el administrador global de la plataforma",
-                            fontSize = 11.sp,
-                            color = Color.Gray,
-                            textAlign = TextAlign.Center
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // ── Botón de Registro ──────────────────────────────────
+                    Text(
+                        text = "¿No tienes cuenta? Regístrate aquí",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clickable { viewModel.onNavigateToRegister() }
+                            .padding(8.dp)
+                    )
                 }
             }
 

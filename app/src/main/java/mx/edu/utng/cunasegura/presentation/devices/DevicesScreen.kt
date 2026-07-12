@@ -40,11 +40,8 @@ private val ColorNoVinculado = Color(0xFF9E9E9E)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DevicesScreen(
-    onNavigateToHome: () -> Unit,
-    onNavigateToContacts: () -> Unit,
     onNavigateToWatchConfig: () -> Unit,
-    onNavigateToTvConfig: () -> Unit,
-    onNavigateToMap: () -> Unit
+    onNavigateToTvConfig: () -> Unit
 ) {
     val context = LocalContext.current
     val viewModel: DevicesViewModel = viewModel(
@@ -64,42 +61,6 @@ fun DevicesScreen(
                 title = { Text("Dispositivos Vinculados", color = Color.White, fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AzulCunaSegura)
             )
-        },
-        bottomBar = {
-            NavigationBar(
-                containerColor = Color.White,
-                tonalElevation = 8.dp
-            ) {
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToHome,
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
-                    label = { Text("Inicio") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToContacts,
-                    icon = { Icon(Icons.Default.Call, contentDescription = "Contactos") },
-                    label = { Text("Contactos") }
-                )
-                NavigationBarItem(
-                    selected = true,
-                    onClick = { /* Ya estamos aquí */ },
-                    icon = { Icon(Icons.Default.Settings, contentDescription = "Dispositivos") },
-                    label = { Text("Dispositivos") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = AzulCunaSegura,
-                        selectedTextColor = AzulCunaSegura,
-                        indicatorColor = AzulCunaSegura.copy(alpha = 0.1f)
-                    )
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToMap,
-                    icon = { Icon(Icons.Default.LocationOn, contentDescription = "Mapa") },
-                    label = { Text("Mapa") }
-                )
-            }
         }
     ) { paddingValues ->
         Column(

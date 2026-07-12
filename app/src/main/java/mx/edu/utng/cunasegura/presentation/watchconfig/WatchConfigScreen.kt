@@ -36,18 +36,19 @@ import mx.edu.utng.cunasegura.di.AppModule
 // ViewModel
 // ──────────────────────────────────────────────────────────────────────────────
 
-private val ACCIONES = listOf(
-    "Enviar mensaje de alerta",
-    "Compartir ubicación en tiempo real",
-    "Activar alarma en TV de vecinos",
-    "Llamar al 911"
+private val ACCIONES_MAP = mapOf(
+    "MENSAJE_SMS" to "Enviar mensaje de alerta",
+    "UBICACION_TIEMPO_REAL" to "Compartir ubicación en tiempo real",
+    "ALARMA_TV" to "Activar alarma en TV de vecinos",
+    "LLAMAR_911" to "Llamar al 911"
 )
+private val ACCIONES_KEYS = ACCIONES_MAP.keys.toList()
 
 data class WatchUiState(
-    val toque1: String = ACCIONES[0],
-    val toque2: String = ACCIONES[1],
-    val toque3: String = ACCIONES[2],
-    val toque4: String = ACCIONES[3],
+    val toque1: String = ACCIONES_KEYS[0],
+    val toque2: String = ACCIONES_KEYS[1],
+    val toque3: String = ACCIONES_KEYS[2],
+    val toque4: String = ACCIONES_KEYS[3],
     val watchVinculado: Boolean = false,
     val guardado: Boolean = false,
     val isLoading: Boolean = false
@@ -58,8 +59,9 @@ class WatchConfigViewModel(private val context: Context) : ViewModel() {
     private val db = AppModule.provideDatabase(context)
     private val toqueDao = db.configuracionToqueDao()
     private val obtenerUsuarioActualUseCase = AppModule.provideObtenerUsuarioActualUseCase(context)
+    private val prefs = mx.edu.utng.cunasegura.data.local.prefs.PreferencesManager(context)
 
-    private val _uiState = MutableStateFlow(WatchUiState())
+    private val _uiState = MutableStateFlow(WatchUiState(watchVinculado = prefs.isWatchLinked()))
     val uiState: StateFlow<WatchUiState> = _uiState.asStateFlow()
 
     private var usuarioId: Int = 1 // Fallback ID
@@ -79,10 +81,10 @@ class WatchConfigViewModel(private val context: Context) : ViewModel() {
             if (configs.isNotEmpty()) {
                 val map = configs.associate { it.cantidadToques to it.tipoAccion }
                 _uiState.value = _uiState.value.copy(
-                    toque1 = map[1] ?: ACCIONES[0],
-                    toque2 = map[2] ?: ACCIONES[1],
-                    toque3 = map[3] ?: ACCIONES[2],
-                    toque4 = map[4] ?: ACCIONES[3],
+                    toque1 = map[1] ?: ACCIONES_KEYS[0],
+                    toque2 = map[2] ?: ACCIONES_KEYS[1],
+                    toque3 = map[3] ?: ACCIONES_KEYS[2],
+                    toque4 = map[4] ?: ACCIONES_KEYS[3],
                     isLoading = false
                 )
             } else {
@@ -105,53 +107,49 @@ class WatchConfigViewModel(private val context: Context) : ViewModel() {
         viewModelScope.launch {
             val state = _uiState.value
             
-            // Insertar o actualizar la configuración para cada toque de este usuario
             val t1 = toqueDao.obtenerPorUsuarioYToque(usuarioId, 1)
-            toqueDao.insertarOActualizar(
-                ConfiguracionToqueEntity(
-                    id = t1?.id ?: 0,
-                    usuarioId = usuarioId,
-                    cantidadToques = 1,
-                    tipoAccion = state.toque1
-                )
-            )
+            toqueDao.insertarOActualizar(ConfiguracionToqueEntity(id = t1?.id ?: 0, usuarioId = usuarioId, cantidadToques = 1, tipoAccion = state.toque1))
 
             val t2 = toqueDao.obtenerPorUsuarioYToque(usuarioId, 2)
-            toqueDao.insertarOActualizar(
-                ConfiguracionToqueEntity(
-                    id = t2?.id ?: 0,
-                    usuarioId = usuarioId,
-                    cantidadToques = 2,
-                    tipoAccion = state.toque2
-                )
-            )
+            toqueDao.insertarOActualizar(ConfiguracionToqueEntity(id = t2?.id ?: 0, usuarioId = usuarioId, cantidadToques = 2, tipoAccion = state.toque2))
 
             val t3 = toqueDao.obtenerPorUsuarioYToque(usuarioId, 3)
-            toqueDao.insertarOActualizar(
-                ConfiguracionToqueEntity(
-                    id = t3?.id ?: 0,
-                    usuarioId = usuarioId,
-                    cantidadToques = 3,
-                    tipoAccion = state.toque3
-                )
-            )
+            toqueDao.insertarOActualizar(ConfiguracionToqueEntity(id = t3?.id ?: 0, usuarioId = usuarioId, cantidadToques = 3, tipoAccion = state.toque3))
 
             val t4 = toqueDao.obtenerPorUsuarioYToque(usuarioId, 4)
-            toqueDao.insertarOActualizar(
-                ConfiguracionToqueEntity(
-                    id = t4?.id ?: 0,
-                    usuarioId = usuarioId,
-                    cantidadToques = 4,
-                    tipoAccion = state.toque4
-                )
-            )
+            toqueDao.insertarOActualizar(ConfiguracionToqueEntity(id = t4?.id ?: 0, usuarioId = usuarioId, cantidadToques = 4, tipoAccion = state.toque4))
 
             _uiState.value = _uiState.value.copy(guardado = true)
+            
+            val payload = "${state.toque1}|${state.toque2}|${state.toque3}|${state.toque4}"
+            val messageClient = com.google.android.gms.wearable.Wearable.getMessageClient(context)
+            val nodeClient = com.google.android.gms.wearable.Wearable.getNodeClient(context)
+            
+            viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                try {
+                    val nodes = com.google.android.gms.tasks.Tasks.await(nodeClient.connectedNodes)
+                    val data = payload.toByteArray()
+                    for (node in nodes) {
+                        messageClient.sendMessage(node.id, "/cunasegura/config/update", data)
+                    }
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        if (nodes.isNotEmpty()) {
+                            android.widget.Toast.makeText(context, "Sincronizando con reloj...", android.widget.Toast.LENGTH_SHORT).show()
+                        } else {
+                            android.widget.Toast.makeText(context, "Guardado, pero no hay reloj conectado", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("WatchConfigViewModel", "Error enviando config", e)
+                }
+            }
         }
     }
 
     fun onSimularVinculacion() {
-        _uiState.value = _uiState.value.copy(watchVinculado = !_uiState.value.watchVinculado)
+        val newState = !_uiState.value.watchVinculado
+        _uiState.value = _uiState.value.copy(watchVinculado = newState)
+        prefs.setWatchLinked(newState)
     }
 }
 
@@ -166,7 +164,7 @@ class WatchConfigViewModelFactory(private val context: Context) : ViewModelProvi
 // Screen
 // ──────────────────────────────────────────────────────────────────────────────
 
-private val AzulCunaSegura = Color(0xFF1F4E79)
+// MaterialTheme colors will be used
 private val VerdeVinculado = Color(0xFF4CAF50)
 private val NaranjaDesvinculado = Color(0xFFFF9800)
 
@@ -177,6 +175,8 @@ fun WatchConfigScreen(onBack: () -> Unit) {
     val viewModel: WatchConfigViewModel = viewModel(factory = WatchConfigViewModelFactory(context))
     val uiState by viewModel.uiState.collectAsState()
 
+    // La vinculación ahora es gestionada automáticamente por Play Services Wearable API.
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -186,7 +186,7 @@ fun WatchConfigScreen(onBack: () -> Unit) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Regresar", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = AzulCunaSegura)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
             )
         }
     ) { paddingValues ->
@@ -233,11 +233,6 @@ fun WatchConfigScreen(onBack: () -> Unit) {
                                 color = Color.Gray
                             )
                         }
-                        Switch(
-                            checked = uiState.watchVinculado,
-                            onCheckedChange = { viewModel.onSimularVinculacion() },
-                            colors = SwitchDefaults.colors(checkedThumbColor = VerdeVinculado)
-                        )
                     }
                 }
             }
@@ -250,10 +245,10 @@ fun WatchConfigScreen(onBack: () -> Unit) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.Top) {
-                        Icon(Icons.Default.Info, contentDescription = null, tint = AzulCunaSegura, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
-                            Text("Requisitos de Vinculación", fontWeight = FontWeight.Bold, color = AzulCunaSegura, fontSize = 13.sp)
+                            Text("Requisitos de Vinculación", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 13.sp)
                             Spacer(modifier = Modifier.height(4.dp))
                             Text("• Watch Wear OS o compatible con BLE\n• Celular con Bluetooth activo\n• Radio máximo ~10 metros\n• La app necesita permiso BLUETOOTH_CONNECT", fontSize = 12.sp, color = Color.DarkGray)
                         }
@@ -263,7 +258,7 @@ fun WatchConfigScreen(onBack: () -> Unit) {
 
             // ── Configuración de Toques ───────────────────────────────────
             item {
-                Text("Asignación de Acciones por Toque", fontWeight = FontWeight.Bold, color = AzulCunaSegura, fontSize = 15.sp)
+                Text("Asignación de Acciones por Toque", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 15.sp)
                 Text("Define qué hace cada toque del botón de pánico en tu watch:", fontSize = 12.sp, color = Color.Gray)
             }
 
@@ -295,7 +290,7 @@ fun WatchConfigScreen(onBack: () -> Unit) {
             item {
                 Button(
                     onClick = { viewModel.guardarConfiguracion() },
-                    colors = ButtonDefaults.buttonColors(containerColor = AzulCunaSegura),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth().height(52.dp)
                 ) {
@@ -331,16 +326,16 @@ private fun ToqueRow(
 
     val emojis = mapOf(1 to "☝️", 2 to "✌️", 3 to "🤟", 4 to "🖐️")
     val iconos: Map<String, ImageVector> = mapOf(
-        "Enviar mensaje de alerta" to Icons.Default.Message,
-        "Compartir ubicación en tiempo real" to Icons.Default.LocationOn,
-        "Activar alarma en TV de vecinos" to Icons.Default.Tv,
-        "Llamar al 911" to Icons.Default.Call
+        "MENSAJE_SMS" to Icons.Default.Message,
+        "UBICACION_TIEMPO_REAL" to Icons.Default.LocationOn,
+        "ALARMA_TV" to Icons.Default.Tv,
+        "LLAMAR_911" to Icons.Default.Call
     )
 
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         // Badge del número de toque
         Box(
-            modifier = Modifier.size(36.dp).clip(CircleShape).background(AzulCunaSegura),
+            modifier = Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary),
             contentAlignment = Alignment.Center
         ) {
             Text(emojis[numero] ?: "$numero", fontSize = 16.sp)
@@ -357,28 +352,28 @@ private fun ToqueRow(
                 onExpandedChange = { expanded = it }
             ) {
                 OutlinedTextField(
-                    value = accionSeleccionada,
+                    value = ACCIONES_MAP[accionSeleccionada] ?: accionSeleccionada,
                     onValueChange = {},
                     readOnly = true,
                     leadingIcon = {
-                        Icon(iconos[accionSeleccionada] ?: Icons.Default.Star, contentDescription = null, tint = AzulCunaSegura, modifier = Modifier.size(18.dp))
+                        Icon(iconos[accionSeleccionada] ?: Icons.Default.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                     },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                     modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
                     textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = AzulCunaSegura,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = Color(0xFFDDDDDD)
                     ),
                     shape = RoundedCornerShape(8.dp)
                 )
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    ACCIONES.forEach { opcion ->
+                    ACCIONES_KEYS.forEach { opcion ->
                         DropdownMenuItem(
                             text = { Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(iconos[opcion] ?: Icons.Default.Star, contentDescription = null, tint = AzulCunaSegura, modifier = Modifier.size(16.dp))
+                                Icon(iconos[opcion] ?: Icons.Default.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(opcion, fontSize = 13.sp)
+                                Text(ACCIONES_MAP[opcion] ?: opcion, fontSize = 13.sp)
                             }},
                             onClick = {
                                 onAccionChange(opcion)

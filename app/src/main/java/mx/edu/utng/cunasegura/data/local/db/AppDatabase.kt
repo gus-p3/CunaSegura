@@ -20,7 +20,9 @@ import mx.edu.utng.cunasegura.data.local.entity.UsuarioEntity
 /**
  * Base de datos local de CunaSegura usando Room.
  *
- * Versión 2: agrega campos [correo] y [password] a [UsuarioEntity].
+ * Versión 3: cambia tipoAccion de texto libre a nombres del enum (MENSAJE_SMS, etc.).
+ * Nota (Sprint 1): Se usa fallbackToDestructiveMigration(), lo cual borrará
+ * los datos existentes (esto es aceptable por ahora ya que no hay usuarios en prod).
  * Singleton: obtener la instancia a través de [AppDatabase.getInstance].
  */
 @Database(
@@ -30,7 +32,7 @@ import mx.edu.utng.cunasegura.data.local.entity.UsuarioEntity
         ContactoEmergenciaEntity::class,
         ConfiguracionToqueEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -86,7 +88,7 @@ abstract class AppDatabase : RoomDatabase() {
                         telefono = ADMIN_TELEFONO,
                         correo = ADMIN_CORREO,
                         password = ADMIN_PASSWORD,
-                        esAdminGlobal = true,
+                        rol = "admin",
                         estado = "activo"
                     )
                 )

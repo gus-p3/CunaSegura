@@ -22,9 +22,15 @@ interface IUsuarioRepository {
 
     /**
      * Valida credenciales de administrador.
-     * @return [Usuario] con [Usuario.esAdminGlobal] = true si las credenciales son correctas, null si no.
+     * @return [Usuario] con [Usuario.rol] = "admin" si las credenciales son correctas, null si no.
      */
     suspend fun validarAdmin(correo: String, password: String): Usuario?
+
+    /**
+     * Valida credenciales genéricas (correo y contraseña).
+     * @return [Usuario] si las credenciales son correctas, null si no.
+     */
+    suspend fun validarLogin(correo: String, password: String): Usuario?
 
     /**
      * Retorna todos los usuarios registrados. Solo para uso del administrador.
@@ -33,4 +39,7 @@ interface IUsuarioRepository {
 
     /** Retorna el usuario de la sesión activa en este dispositivo, o null si no hay ninguno. */
     suspend fun obtenerUsuarioActual(): Usuario?
+
+    /** Elimina todos los usuarios locales para asegurar una sesión única. */
+    suspend fun limpiarSesionLocal()
 }

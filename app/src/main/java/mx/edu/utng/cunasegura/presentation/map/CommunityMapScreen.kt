@@ -5,8 +5,13 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.gms.location.LocationServices
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -27,27 +32,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.*
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import mx.edu.utng.cunasegura.domain.model.Alerta
+import mx.edu.utng.cunasegura.R // for default icons if needed
 import java.text.SimpleDateFormat
 import java.util.*
 
 private val AzulCunaSegura = Color(0xFF1F4E79)
 private val RojoSOS = Color(0xFFD32F2F)
 // Dolores Hidalgo, Gto. — posición por defecto
-private val DEFAULT_LOCATION = LatLng(21.1565, -100.9327)
+private val DEFAULT_LOCATION = GeoPoint(21.1565, -100.9327)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CommunityMapScreen(
-    onNavigateToHome: () -> Unit,
-    onNavigateToContacts: () -> Unit,
-    onNavigateToDevices: () -> Unit
-) {
+fun CommunityMapScreen() {
     val context = LocalContext.current
     val viewModel: MapViewModel = viewModel(factory = MapViewModelFactory(context))
 
@@ -55,14 +59,22 @@ fun CommunityMapScreen(
     val userLocation by viewModel.userLocation.collectAsState()
     val activeAlerts by viewModel.activeAlerts.collectAsState()
 
-    // Solicitar permiso de ubicación en runtime
-    var locationPermissionGranted by remember { mutableStateOf(false) }
+    // Check current permission state on startup
+    var locationPermissionGranted by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         locationPermissionGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                 permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
     }
+
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
     LaunchedEffect(Unit) {
         permissionLauncher.launch(
@@ -73,19 +85,24 @@ fun CommunityMapScreen(
         )
     }
 
-    // Estado de la cámara del mapa
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(DEFAULT_LOCATION, 14f)
+    // Fetch actual real location when permission is granted
+    LaunchedEffect(locationPermissionGranted) {
+        if (locationPermissionGranted) {
+            try {
+                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                    if (location != null) {
+                        viewModel.setUbicacionUsuario(location.latitude, location.longitude)
+                    }
+                }
+            } catch (e: SecurityException) {
+                // Permissions denied/revoked
+            }
+        }
     }
 
-    // Centra la cámara cuando se carga la ubicación del usuario
-    LaunchedEffect(userLocation) {
-        userLocation?.let { loc ->
-            cameraPositionState.animate(
-                update = CameraUpdateFactory.newLatLngZoom(loc, 15f),
-                durationMs = 800
-            )
-        }
+    // Configuramos Osmdroid user agent para que el servidor deje descargar mapas
+    LaunchedEffect(Unit) {
+        Configuration.getInstance().userAgentValue = context.packageName
     }
 
     Scaffold(
@@ -105,86 +122,59 @@ fun CommunityMapScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AzulCunaSegura)
             )
-        },
-        bottomBar = {
-            NavigationBar(containerColor = Color.White, tonalElevation = 8.dp) {
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToHome,
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
-                    label = { Text("Inicio") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToContacts,
-                    icon = { Icon(Icons.Default.Call, contentDescription = "Contactos") },
-                    label = { Text("Contactos") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToDevices,
-                    icon = { Icon(Icons.Default.Settings, contentDescription = "Dispositivos") },
-                    label = { Text("Dispositivos") }
-                )
-                NavigationBarItem(
-                    selected = true,
-                    onClick = { /* Ya estamos aquí */ },
-                    icon = { Icon(Icons.Default.LocationOn, contentDescription = "Mapa") },
-                    label = { Text("Mapa") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = AzulCunaSegura,
-                        selectedTextColor = AzulCunaSegura,
-                        indicatorColor = AzulCunaSegura.copy(alpha = 0.1f)
-                    )
-                )
-            }
         }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
         ) {
-            // --- Mapa (60% de la pantalla) ---
-            Box(modifier = Modifier.weight(0.6f).fillMaxWidth()) {
-                GoogleMap(
-                    modifier = Modifier.fillMaxSize(),
-                    cameraPositionState = cameraPositionState,
-                    properties = MapProperties(
-                        isMyLocationEnabled = locationPermissionGranted
-                    ),
-                    uiSettings = MapUiSettings(
-                        myLocationButtonEnabled = locationPermissionGranted,
-                        zoomControlsEnabled = true
-                    )
-                ) {
-                    // Marcador verde del usuario actual
-                    userLocation?.let { loc ->
-                        Marker(
-                            state = MarkerState(position = loc),
-                            title = "Yo — ${usuario?.nombre ?: "Vecino"}",
-                            snippet = "Mi ubicación actual",
-                            icon = BitmapDescriptorFactory.defaultMarker(
-                                BitmapDescriptorFactory.HUE_GREEN
-                            )
-                        )
-                    }
-
-                    // Marcadores rojos de alertas activas
-                    activeAlerts.forEach { alerta ->
-                        val alertaPos = LatLng(alerta.latitud, alerta.longitud)
-                        if (alerta.latitud != 0.0 || alerta.longitud != 0.0) {
-                            Marker(
-                                state = MarkerState(position = alertaPos),
-                                title = "🔴 Alerta SOS",
-                                snippet = "Estado: ${alerta.estado}",
-                                icon = BitmapDescriptorFactory.defaultMarker(
-                                    BitmapDescriptorFactory.HUE_RED
-                                )
-                            )
+            // --- Mapa (Altura fija de 350.dp para evitar conflictos con el resto del contenido) ---
+            Box(modifier = Modifier.height(350.dp).fillMaxWidth()) {
+                AndroidView(
+                    factory = { ctx ->
+                        MapView(ctx).apply {
+                            setTileSource(TileSourceFactory.MAPNIK)
+                            setMultiTouchControls(true)
+                            controller.setZoom(15.0)
+                            controller.setCenter(DEFAULT_LOCATION)
                         }
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                    update = { mapView ->
+                        mapView.overlays.clear()
+                        
+                        // Centrar en usuario si está disponible
+                        userLocation?.let { loc ->
+                            mapView.controller.setCenter(loc)
+                            
+                            val userMarker = Marker(mapView)
+                            userMarker.position = loc
+                            userMarker.title = "Yo — ${usuario?.nombre ?: "Vecino"}"
+                            userMarker.snippet = "Mi ubicación actual"
+                            userMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                            // Marcador verde por defecto podemos teñir el ícono si tuviéramos un Drawable
+                            // Por simplicidad, usamos el marcador por defecto
+                            mapView.overlays.add(userMarker)
+                        }
+
+                        // Marcadores rojos de alertas activas
+                        activeAlerts.forEach { alerta ->
+                            val alertaPos = GeoPoint(alerta.latitud, alerta.longitud)
+                            if (alerta.latitud != 0.0 || alerta.longitud != 0.0) {
+                                val alertMarker = Marker(mapView)
+                                alertMarker.position = alertaPos
+                                alertMarker.title = "🔴 Alerta SOS"
+                                alertMarker.snippet = "Estado: ${alerta.estado}"
+                                alertMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                                mapView.overlays.add(alertMarker)
+                            }
+                        }
+                        
+                        mapView.invalidate()
                     }
-                }
+                )
 
                 // Leyenda sobre el mapa
                 Card(
@@ -230,13 +220,12 @@ fun CommunityMapScreen(
                 )
             }
 
-            // --- Lista de alertas activas (40% de la pantalla) ---
+            // --- Lista de alertas activas ---
             if (activeAlerts.isEmpty()) {
                 Box(
                     modifier = Modifier
-                        .weight(0.4f)
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -256,34 +245,34 @@ fun CommunityMapScreen(
                     }
                 }
             } else {
-                Column(modifier = Modifier.weight(0.4f)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
                     Text(
                         text = "Alertas activas (${activeAlerts.size})",
-                        fontSize = 13.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = RojoSOS,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(activeAlerts) { alerta ->
-                            AlertaItem(
-                                alerta = alerta,
-                                nombreUsuario = usuario?.nombre ?: "Vecino",
-                                telefonoUsuario = usuario?.telefono ?: "",
-                                onLlamarUsuario = { telefono ->
-                                    val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$telefono"))
-                                    context.startActivity(intent)
-                                },
-                                onLlamar911 = {
-                                    val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:911"))
-                                    context.startActivity(intent)
-                                }
-                            )
-                        }
+                    
+                    activeAlerts.forEach { alerta ->
+                        AlertaItem(
+                            alerta = alerta,
+                            nombreUsuario = usuario?.nombre ?: "Vecino",
+                            telefonoUsuario = usuario?.telefono ?: "",
+                            onLlamarUsuario = { telefono ->
+                                val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$telefono"))
+                                context.startActivity(intent)
+                            },
+                            onLlamar911 = {
+                                val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:911"))
+                                context.startActivity(intent)
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
             }

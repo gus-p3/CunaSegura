@@ -4,62 +4,43 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import mx.edu.utng.cunasegura.di.AppModule
 import mx.edu.utng.cunasegura.domain.model.Usuario
 import mx.edu.utng.cunasegura.domain.usecase.GuardarUsuarioUseCase
-import mx.edu.utng.cunasegura.domain.usecase.ObtenerUsuarioUseCase
-import mx.edu.utng.cunasegura.domain.usecase.ValidarAdminUseCase
+import mx.edu.utng.cunasegura.domain.usecase.LimpiarSesionLocalUseCase
 
 /**
  * Estado de la pantalla de Login.
  */
 data class LoginUiState(
-    // Modo vecino
-    val phoneNumber: String = "",
-    // Modo admin
     val correo: String = "",
     val password: String = "",
-    // Modo activo
-    val esAdmin: Boolean = false,
-    // Estado
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val navigateToHome: Boolean = false,
-    val navigateToAdmin: Boolean = false
+    val navigateToAdmin: Boolean = false,
+    val navigateToRegister: Boolean = false
 )
 
 class LoginViewModel(
     private val guardarUsuarioUseCase: GuardarUsuarioUseCase,
-    private val obtenerUsuarioUseCase: ObtenerUsuarioUseCase,
-    private val validarAdminUseCase: ValidarAdminUseCase
+    private val limpiarSesionLocalUseCase: LimpiarSesionLocalUseCase,
+    private val context: Context
 ) : ViewModel() {
 
+    private val auth = FirebaseAuth.getInstance()
+    private val db = FirebaseDatabase.getInstance()
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
-
-    /** Alterna entre modo vecino (teléfono) y modo admin (correo + contraseña). */
-    fun onToggleAdminMode() {
-        _uiState.value = _uiState.value.copy(
-            esAdmin = !_uiState.value.esAdmin,
-            errorMessage = null,
-            phoneNumber = "",
-            correo = "",
-            password = ""
-        )
-    }
-
-    /** Actualiza el número de teléfono (solo dígitos, máximo 10). */
-    fun onPhoneNumberChange(value: String) {
-        val digitsOnly = value.filter { it.isDigit() }.take(10)
-        _uiState.value = _uiState.value.copy(
-            phoneNumber = digitsOnly,
-            errorMessage = null
-        )
-    }
 
     fun onCorreoChange(value: String) {
         _uiState.value = _uiState.value.copy(correo = value, errorMessage = null)
@@ -69,41 +50,15 @@ class LoginViewModel(
         _uiState.value = _uiState.value.copy(password = value, errorMessage = null)
     }
 
-    /** Se llama al presionar el botón de ingresar. Delega al modo correcto. */
+    fun onNavigateToRegister() {
+        _uiState.value = _uiState.value.copy(navigateToRegister = true)
+    }
+    
+    fun onRegisterNavigated() {
+        _uiState.value = _uiState.value.copy(navigateToRegister = false)
+    }
+
     fun onLoginClick() {
-        if (_uiState.value.esAdmin) {
-            loginAdmin()
-        } else {
-            loginVecino()
-        }
-    }
-
-    // ------------------------------------------------------------------
-    // Login vecino (número de teléfono)
-    // ------------------------------------------------------------------
-    private fun loginVecino() {
-        val phone = _uiState.value.phoneNumber
-        if (phone.isBlank() || phone.length < 10) {
-            _uiState.value = _uiState.value.copy(
-                errorMessage = "Ingresa un número de teléfono válido de 10 dígitos"
-            )
-            return
-        }
-
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            val usuarioExistente = obtenerUsuarioUseCase(phone)
-            if (usuarioExistente == null) {
-                guardarUsuarioUseCase(Usuario(nombre = "Vecino", telefono = phone))
-            }
-            _uiState.value = _uiState.value.copy(isLoading = false, navigateToHome = true)
-        }
-    }
-
-    // ------------------------------------------------------------------
-    // Login admin (correo + contraseña)
-    // ------------------------------------------------------------------
-    private fun loginAdmin() {
         val correo = _uiState.value.correo.trim()
         val password = _uiState.value.password
 
@@ -118,15 +73,55 @@ class LoginViewModel(
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            val admin = validarAdminUseCase(correo, password)
-            if (admin != null) {
-                // Guardar sesión del admin para el Splash en futuros arranques
-                guardarUsuarioUseCase(admin)
-                _uiState.value = _uiState.value.copy(isLoading = false, navigateToAdmin = true)
-            } else {
+            try {
+                val result = auth.signInWithEmailAndPassword(correo, password).await()
+                val firebaseUser = result.user
+                
+                if (firebaseUser != null) {
+                    // Fetch real user data from Realtime Database
+                    val snapshot = db.getReference("usuarios").child(firebaseUser.uid).get().await()
+                    val nombre = snapshot.child("nombre").getValue(String::class.java) ?: firebaseUser.displayName ?: correo.substringBefore("@")
+                    val telefono = snapshot.child("telefono").getValue(String::class.java) ?: ""
+                    val rolDb = snapshot.child("rol").getValue(String::class.java) ?: "usuario"
+                    
+                    val ADMIN_EMAIL = "admin@cunasegura.com"
+                    val esAdmin = (rolDb == "admin") || (firebaseUser.email == ADMIN_EMAIL)
+                    val rolFinal = if (esAdmin) "admin" else "usuario"
+
+                    // Clear previous session so Room LIMIT 1 works correctly for this new user
+                    limpiarSesionLocalUseCase()
+
+                    // Save user to local Room DB
+                    val usuario = Usuario(
+                        id = 0,
+                        nombre = nombre,
+                        telefono = telefono,
+                        correo = correo,
+                        password = "",
+                        rol = rolFinal
+                    )
+                    guardarUsuarioUseCase(usuario)
+
+                    if (esAdmin) {
+                        _uiState.value = _uiState.value.copy(isLoading = false, navigateToAdmin = true)
+                    } else {
+                        _uiState.value = _uiState.value.copy(isLoading = false, navigateToHome = true)
+                    }
+                }
+            } catch (e: FirebaseAuthInvalidUserException) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "Credenciales incorrectas. Solo el administrador global puede ingresar aquí."
+                    errorMessage = "No existe una cuenta con ese correo. ¿Quieres registrarte?"
+                )
+            } catch (e: FirebaseAuthInvalidCredentialsException) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Contraseña incorrecta. Verifica tus datos."
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Error de conexión: ${e.localizedMessage ?: "Sin conexión a internet"}"
                 )
             }
         }
@@ -142,8 +137,8 @@ class LoginViewModelFactory(private val context: Context) : ViewModelProvider.Fa
             @Suppress("UNCHECKED_CAST")
             return LoginViewModel(
                 AppModule.provideGuardarUsuarioUseCase(context),
-                AppModule.provideObtenerUsuarioUseCase(context),
-                AppModule.provideValidarAdminUseCase(context)
+                AppModule.provideLimpiarSesionLocalUseCase(context),
+                context
             ) as T
         }
         throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")

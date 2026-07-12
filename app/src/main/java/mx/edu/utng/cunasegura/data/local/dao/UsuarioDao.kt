@@ -37,8 +37,15 @@ interface UsuarioDao {
      * Valida credenciales de administrador por correo y contraseña.
      * @return [UsuarioEntity] si las credenciales son correctas, null si no.
      */
-    @Query("SELECT * FROM usuarios WHERE correo = :correo AND password = :password AND esAdminGlobal = 1 LIMIT 1")
+    @Query("SELECT * FROM usuarios WHERE correo = :correo AND password = :password AND rol = 'admin' LIMIT 1")
     suspend fun validarAdmin(correo: String, password: String): UsuarioEntity?
+
+    /**
+     * Valida credenciales de login genérico por correo y contraseña.
+     * @return [UsuarioEntity] si las credenciales son correctas, null si no.
+     */
+    @Query("SELECT * FROM usuarios WHERE correo = :correo AND password = :password LIMIT 1")
+    suspend fun validarLogin(correo: String, password: String): UsuarioEntity?
 
     /**
      * Retorna el primer usuario registrado en el dispositivo (sesión activa).
@@ -58,4 +65,11 @@ interface UsuarioDao {
      */
     @Query("SELECT COUNT(*) FROM usuarios")
     suspend fun contarUsuarios(): Int
+
+    /**
+     * Elimina todos los usuarios locales.
+     * Útil para limpiar la sesión antes de un nuevo login.
+     */
+    @Query("DELETE FROM usuarios")
+    suspend fun eliminarTodos()
 }

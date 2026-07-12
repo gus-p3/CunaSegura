@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.google.android.gms.maps.model.LatLng
+import org.osmdroid.util.GeoPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,8 +31,8 @@ class MapViewModel(
     private val _usuario = MutableStateFlow<Usuario?>(null)
     val usuario: StateFlow<Usuario?> = _usuario.asStateFlow()
 
-    private val _userLocation = MutableStateFlow<LatLng?>(null)
-    val userLocation: StateFlow<LatLng?> = _userLocation.asStateFlow()
+    private val _userLocation = MutableStateFlow<GeoPoint?>(null)
+    val userLocation: StateFlow<GeoPoint?> = _userLocation.asStateFlow()
 
     private val _activeAlerts = MutableStateFlow<List<Alerta>>(emptyList())
     val activeAlerts: StateFlow<List<Alerta>> = _activeAlerts.asStateFlow()
@@ -48,20 +48,24 @@ class MapViewModel(
             if (usuario != null) {
                 // Actualizar la posición del marcador con lat/lng de Room
                 if (usuario.latActual != 0.0 || usuario.lonActual != 0.0) {
-                    _userLocation.value = LatLng(usuario.latActual, usuario.lonActual)
+                    _userLocation.value = GeoPoint(usuario.latActual, usuario.lonActual)
                 } else {
                     // Coordenadas por defecto: Dolores Hidalgo, Guanajuato
-                    _userLocation.value = LatLng(21.1565, -100.9327)
+                    _userLocation.value = GeoPoint(21.1565, -100.9327)
                 }
 
-                // Observar alertas activas del usuario de forma reactiva
-                alertaRepository.obtenerAlertaActiva(usuario.id)
-                    .onEach { alerta ->
-                        _activeAlerts.value = if (alerta != null) listOf(alerta) else emptyList()
+                // Observar alertas activas de la comunidad en tiempo real (Firebase)
+                alertaRepository.obtenerAlertasVecinalesActivas()
+                    .onEach { alertas ->
+                        _activeAlerts.value = alertas
                     }
                     .launchIn(viewModelScope)
             }
         }
+    }
+
+    fun setUbicacionUsuario(lat: Double, lon: Double) {
+        _userLocation.value = GeoPoint(lat, lon)
     }
 }
 

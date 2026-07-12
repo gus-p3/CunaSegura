@@ -1,88 +1,109 @@
 package mx.edu.utng.cunasegura.data.repository
 
-import mx.edu.utng.cunasegura.data.local.dao.UsuarioDao
-import mx.edu.utng.cunasegura.data.local.entity.UsuarioEntity
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.tasks.await
 import mx.edu.utng.cunasegura.domain.model.Usuario
 import mx.edu.utng.cunasegura.domain.repository.IUsuarioRepository
 
 /**
- * Implementación concreta de [IUsuarioRepository] que usa Room como origen de datos local.
- *
- * Contiene los mappers Entity ↔ Domain para mantener aislada la capa de dominio
- * de los detalles de persistencia.
+ * Implementación concreta de [IUsuarioRepository] que usa Firebase (Auth y Realtime Database)
+ * como única fuente de verdad, eliminando la necesidad de persistir usuarios locales en SQLite/Room.
  */
-class UsuarioRepositoryImpl(
-    private val usuarioDao: UsuarioDao
-) : IUsuarioRepository {
+class UsuarioRepositoryImpl : IUsuarioRepository {
 
-    // -------------------------------------------------------------------------
-    // IUsuarioRepository
-    // -------------------------------------------------------------------------
+    private val auth = FirebaseAuth.getInstance()
+    private val db = FirebaseDatabase.getInstance()
 
     override suspend fun guardarUsuario(usuario: Usuario) {
-        // Si ya existe un registro con ese teléfono, se preserva su id original
-        // para no generar un duplicado (REPLACE por id).
-        val existente = usuarioDao.buscarPorTelefono(usuario.telefono)
-        val entity = usuario.toEntity(idExistente = existente?.id)
-        usuarioDao.insertarUsuario(entity)
+        val firebaseUser = auth.currentUser ?: return
+        val map = mapOf(
+            "nombre" to usuario.nombre,
+            "telefono" to usuario.telefono,
+            "correo" to usuario.correo,
+            "rol" to usuario.rol,
+            "estado" to usuario.estado,
+            "tvVinculada" to usuario.tvVinculada
+        )
+        db.getReference("usuarios").child(firebaseUser.uid).updateChildren(map).await()
     }
 
     override suspend fun buscarPorTelefono(telefono: String): Usuario? {
-        return usuarioDao.buscarPorTelefono(telefono)?.toDomain()
+        val snapshot = db.getReference("usuarios")
+            .orderByChild("telefono")
+            .equalTo(telefono)
+            .limitToFirst(1)
+            .get()
+            .await()
+        
+        val child = snapshot.children.firstOrNull() ?: return null
+        return Usuario(
+            id = 0,
+            nombre = child.child("nombre").getValue(String::class.java) ?: "",
+            telefono = child.child("telefono").getValue(String::class.java) ?: "",
+            correo = child.child("correo").getValue(String::class.java) ?: "",
+            password = "",
+            rol = child.child("rol").getValue(String::class.java) ?: "usuario",
+            estado = child.child("estado").getValue(String::class.java) ?: "activo",
+            tvVinculada = child.child("tvVinculada").getValue(Boolean::class.java) ?: false
+        )
     }
 
     override suspend fun validarAdmin(correo: String, password: String): Usuario? {
-        return usuarioDao.validarAdmin(correo, password)?.toDomain()
+        // Redundante con Firebase Auth
+        return null
+    }
+
+    override suspend fun validarLogin(correo: String, password: String): Usuario? {
+        // Redundante con Firebase Auth
+        return null
     }
 
     override suspend fun obtenerTodosLosUsuarios(): List<Usuario> {
-        return usuarioDao.obtenerTodosLosUsuarios().map { it.toDomain() }
+        val snapshot = db.getReference("usuarios").get().await()
+        return snapshot.children.mapNotNull { child ->
+            Usuario(
+                id = 0,
+                nombre = child.child("nombre").getValue(String::class.java) ?: "",
+                telefono = child.child("telefono").getValue(String::class.java) ?: "",
+                correo = child.child("correo").getValue(String::class.java) ?: "",
+                password = "",
+                rol = child.child("rol").getValue(String::class.java) ?: "usuario",
+                estado = child.child("estado").getValue(String::class.java) ?: "activo",
+                tvVinculada = child.child("tvVinculada").getValue(Boolean::class.java) ?: false
+            )
+        }
     }
 
     override suspend fun obtenerUsuarioActual(): Usuario? {
-        return usuarioDao.obtenerUsuarioActual()?.toDomain()
+        val firebaseUser = auth.currentUser ?: return null
+        val snapshot = db.getReference("usuarios").child(firebaseUser.uid).get().await()
+        if (!snapshot.exists()) {
+            val email = firebaseUser.email ?: ""
+            return Usuario(
+                id = 0,
+                nombre = firebaseUser.displayName ?: email.substringBefore("@"),
+                telefono = "",
+                correo = email,
+                password = "",
+                rol = if (email == "admin@cunasegura.com") "admin" else "usuario",
+                estado = "activo",
+                tvVinculada = false
+            )
+        }
+        return Usuario(
+            id = 0,
+            nombre = snapshot.child("nombre").getValue(String::class.java) ?: firebaseUser.displayName ?: firebaseUser.email?.substringBefore("@") ?: "",
+            telefono = snapshot.child("telefono").getValue(String::class.java) ?: "",
+            correo = snapshot.child("correo").getValue(String::class.java) ?: firebaseUser.email ?: "",
+            password = "",
+            rol = snapshot.child("rol").getValue(String::class.java) ?: "usuario",
+            estado = snapshot.child("estado").getValue(String::class.java) ?: "activo",
+            tvVinculada = snapshot.child("tvVinculada").getValue(Boolean::class.java) ?: false
+        )
     }
 
-    // -------------------------------------------------------------------------
-    // Mappers
-    // -------------------------------------------------------------------------
-
-    /**
-     * Convierte un [Usuario] de dominio a [UsuarioEntity] de Room.
-     * Si [idExistente] no es null, se usa ese id para evitar duplicados.
-     */
-    private fun Usuario.toEntity(idExistente: Int? = null): UsuarioEntity =
-        UsuarioEntity(
-            id = idExistente ?: this.id,
-            nombre = this.nombre,
-            telefono = this.telefono,
-            correo = this.correo,
-            password = this.password,
-            consentimientoGps = this.consentimientoGps,
-            latActual = this.latActual,
-            lonActual = this.lonActual,
-            fcmToken = this.fcmToken,
-            tvVinculada = this.tvVinculada,
-            esAdminGlobal = this.esAdminGlobal,
-            estado = this.estado
-        )
-
-    /**
-     * Convierte un [UsuarioEntity] de Room al modelo de dominio [Usuario].
-     */
-    private fun UsuarioEntity.toDomain(): Usuario =
-        Usuario(
-            id = this.id,
-            nombre = this.nombre,
-            telefono = this.telefono,
-            correo = this.correo,
-            password = this.password,
-            consentimientoGps = this.consentimientoGps,
-            latActual = this.latActual,
-            lonActual = this.lonActual,
-            fcmToken = this.fcmToken,
-            tvVinculada = this.tvVinculada,
-            esAdminGlobal = this.esAdminGlobal,
-            estado = this.estado
-        )
+    override suspend fun limpiarSesionLocal() {
+        // No-op: La sesión se gestiona únicamente mediante Firebase Auth
+    }
 }

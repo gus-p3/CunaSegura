@@ -2,6 +2,7 @@ package mx.edu.utng.cunasegurawear.presentation.viewmodel
 
 import android.content.Context
 import android.location.Geocoder
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -19,6 +20,7 @@ import mx.edu.utng.cunasegurawear.data.location.WatchLocationTracker
 import mx.edu.utng.cunasegurawear.domain.model.AlertPhase
 import mx.edu.utng.cunasegurawear.domain.model.AlertState
 import mx.edu.utng.cunasegurawear.domain.model.SosAction
+import mx.edu.utng.cunasegurawear.domain.repository.ConfigRepository
 import mx.edu.utng.cunasegurawear.domain.usecase.CancelAlertUseCase
 import mx.edu.utng.cunasegurawear.domain.usecase.GetSosActionsUseCase
 import mx.edu.utng.cunasegurawear.domain.usecase.TriggerSosUseCase
@@ -27,10 +29,12 @@ class WatchViewModel(
     private val triggerSos: TriggerSosUseCase,
     private val cancelAlert: CancelAlertUseCase,
     private val getSosActions: GetSosActionsUseCase,
+    private val configRepo: ConfigRepository,
     private val touchConfigDao: TouchConfigDao,
     private val locationTracker: WatchLocationTracker,
     private val context: Context
 ) : ViewModel() {
+    private val TAG = "WatchViewModel"
     private val _state = MutableStateFlow(AlertState())
     val state: StateFlow<AlertState> = _state.asStateFlow()
     private var countdownJob: Job? = null
@@ -38,13 +42,13 @@ class WatchViewModel(
     private var locationJob: Job? = null
 
     init {
-        // Load initial actions from DataStore
+        // Cargar acciones iniciales desde DataStore
         viewModelScope.launch {
             val actions = getSosActions()
             _state.update { it.copy(configuredActions = actions) }
         }
 
-        // Observe dynamic configurations from Room database with self-healing fallback (slots 1, 2, 3, 4)
+        // Observar Room con self-healing: si faltan slots, los crea con valores por defecto
         viewModelScope.launch {
             touchConfigDao.getAllConfigs().collect { configs ->
                 val needsSelfHealing = configs.size < 4 || configs.any { it.actionLabel.isBlank() || it.actionName.isBlank() }
@@ -64,47 +68,86 @@ class WatchViewModel(
                 }
             }
         }
+
+        // ── SYNC BIDIRECCIONAL: escuchar config entrante del teléfono ────────
+        // Este Flow emite tanto en tiempo real (NOTIFY) como al reconectar (READ sync).
+        viewModelScope.launch {
+            configRepo.observeConfigFromPhone().collect { payload ->
+                Log.i(TAG, "📥 [CONFIG-SYNC] Payload recibido del teléfono: $payload")
+                applyIncomingConfig(payload)
+            }
+        }
+    }
+
+    /**
+     * Parsea el payload de config recibido por BLE y actualiza Room + estado de la UI.
+     * Formato esperado: "MENSAJE_SMS|UBICACION_TIEMPO_REAL|ALARMA_TV|LLAMAR_911"
+     */
+    private fun applyIncomingConfig(payload: String) {
+        if (payload.isBlank() || payload == "NO_CONFIG") {
+            Log.w(TAG, "⚠️ Config recibida vacía o sin configurar — ignorando")
+            return
+        }
+        val parts = payload.split("|")
+        if (parts.size < 4) {
+            Log.w(TAG, "⚠️ Payload de config malformado (esperados 4 partes): $payload")
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val newConfigs = parts.mapIndexedNotNull { index, actionName ->
+                val tapNumber = index + 1
+                // Validar que el nombre corresponda a un SosAction conocido
+                val action = SosAction.values().firstOrNull { it.name == actionName }
+                if (action == null) {
+                    Log.w(TAG, "⚠️ Acción desconocida en slot $tapNumber: '$actionName' — ignorando slot")
+                    null
+                } else {
+                    TouchConfig(tapNumber = tapNumber, actionName = action.name, actionLabel = action.label)
+                }
+            }
+            if (newConfigs.size == 4) {
+                touchConfigDao.insertConfigs(newConfigs)
+                Log.i(TAG, "✅ Room actualizado con config del teléfono: ${newConfigs.joinToString { "${it.tapNumber}→${it.actionName}" }}")
+                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(context, "Sincronizado con teléfono", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Log.w(TAG, "⚠️ Config parcialmente inválida — solo ${newConfigs.size}/4 slots actualizados")
+            }
+        }
     }
 
     fun updateTouchConfig(tapNumber: Int, action: SosAction) {
         viewModelScope.launch(Dispatchers.IO) {
-            // 1. Obtener la acción que actualmente tiene asignada el slot destino
+            // 1. Leer el slot destino
             val targetConfig = touchConfigDao.getConfigForTaps(tapNumber)
             val oldActionName = targetConfig?.actionName ?: ""
             val oldActionLabel = targetConfig?.actionLabel ?: ""
 
-            // 2. Buscar si hay otro slot que ya tenga asignada la nueva acción
+            // 2. Detectar si la acción nueva ya existe en otro slot (swap)
             val sourceConfig = touchConfigDao.getConfigForAction(action.name)
 
             if (sourceConfig != null && sourceConfig.tapNumber != tapNumber) {
-                // Intercambio (swap) para evitar duplicados:
-                // Asignamos la nueva acción al slot destino
-                touchConfigDao.insertConfig(
-                    TouchConfig(
-                        tapNumber = tapNumber,
-                        actionName = action.name,
-                        actionLabel = action.label
-                    )
-                )
-                // Asignamos la acción anterior del destino al slot de donde provenía la nueva acción
+                touchConfigDao.insertConfig(TouchConfig(tapNumber, action.name, action.label))
                 if (oldActionName.isNotEmpty()) {
-                    touchConfigDao.insertConfig(
-                        TouchConfig(
-                            tapNumber = sourceConfig.tapNumber,
-                            actionName = oldActionName,
-                            actionLabel = oldActionLabel
-                        )
-                    )
+                    touchConfigDao.insertConfig(TouchConfig(sourceConfig.tapNumber, oldActionName, oldActionLabel))
                 }
             } else {
-                // Sin conflictos: simplemente actualizamos el slot destino
-                touchConfigDao.insertConfig(
-                    TouchConfig(
-                        tapNumber = tapNumber,
-                        actionName = action.name,
-                        actionLabel = action.label
-                    )
-                )
+                touchConfigDao.insertConfig(TouchConfig(tapNumber, action.name, action.label))
+            }
+
+            // 3. Propagar el cambio al teléfono vía BLE (reloj → teléfono)
+            val allConfigs = touchConfigDao.getAllConfigsNow()
+            val payload = (1..4).joinToString("|") { slot ->
+                allConfigs.firstOrNull { it.tapNumber == slot }?.actionName
+                    ?: SosAction.values().getOrNull(slot - 1)?.name
+                    ?: "MENSAJE_SMS"
+            }
+            Log.d(TAG, "📡 [CONFIG-UPDATE] Enviando config actualizada al teléfono: $payload")
+            val result = configRepo.sendConfigToPhone(payload)
+            result.onFailure { e ->
+                Log.w(TAG, "⚠️ No se pudo enviar config al teléfono (¿desconectado?): ${e.message}")
+                // Falla silenciosa: el teléfono la recibirá en la próxima reconexión
             }
         }
     }
@@ -175,6 +218,9 @@ class WatchViewModel(
             }
 
             android.util.Log.d("WatchViewModel", "Taps=$taps → acción=$actionName ($actionLabel) [fuente: ${if (config != null) "estado" else "BD/fallback"}]")
+            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                android.widget.Toast.makeText(context, "Toque $taps: $actionName", android.widget.Toast.LENGTH_SHORT).show()
+            }
 
             // PASO 2: Actualiza la pantalla con la cuenta regresiva y el nombre de la acción
             _state.update {

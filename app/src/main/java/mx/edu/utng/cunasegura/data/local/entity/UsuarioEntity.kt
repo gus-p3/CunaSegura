@@ -22,6 +22,6 @@ data class UsuarioEntity(
     val lonActual: Double = 0.0,
     val fcmToken: String = "",
     val tvVinculada: Boolean = false,
-    val esAdminGlobal: Boolean = false,
+    val rol: String = "usuario",
     val estado: String = "activo"
 )

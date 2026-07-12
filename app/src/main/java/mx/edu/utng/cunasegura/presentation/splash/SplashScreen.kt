@@ -48,13 +48,21 @@ fun SplashScreen(
     LaunchedEffect(Unit) {
         delay(1500) // Splash de 1.5 segundos
 
-        val obtenerUsuario = AppModule.provideObtenerUsuarioActualUseCase(context)
-        val usuario = obtenerUsuario()
-
-        when {
-            usuario == null -> onNavigateToLogin()
-            usuario.esAdminGlobal -> onNavigateToAdmin()
-            else -> onNavigateToHome()
+        // Check Firebase Auth session first
+        val firebaseUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+        
+        if (firebaseUser == null) {
+            onNavigateToLogin()
+        } else {
+            // Obtenemos el usuario de Room que representa la sesión local activa
+            val obtenerUsuarioActual = AppModule.provideObtenerUsuarioActualUseCase(context)
+            val usuarioActual = obtenerUsuarioActual()
+            if (usuarioActual != null && usuarioActual.rol == "admin") {
+                onNavigateToAdmin()
+            } else {
+                // Si no hay sesión local o no es admin, por defecto va a Home
+                onNavigateToHome()
+            }
         }
     }
 
