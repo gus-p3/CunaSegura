@@ -22,12 +22,17 @@ class WatchActivity : ComponentActivity() {
             ActivityResultContracts.RequestMultiplePermissions()
         ) { _ -> }
         
-        requestPermissionLauncher.launch(
-            arrayOf(
-                android.Manifest.permission.ACCESS_FINE_LOCATION,
-                android.Manifest.permission.ACCESS_COARSE_LOCATION
-            )
+        val permissions = mutableListOf(
+            android.Manifest.permission.ACCESS_FINE_LOCATION,
+            android.Manifest.permission.ACCESS_COARSE_LOCATION
         )
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            permissions.add(android.Manifest.permission.BLUETOOTH_SCAN)
+            permissions.add(android.Manifest.permission.BLUETOOTH_CONNECT)
+        }
+        
+        requestPermissionLauncher.launch(permissions.toTypedArray())
 
         setContent {
             WatchTheme {

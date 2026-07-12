@@ -27,4 +27,9 @@ interface IAlertaRepository {
      * Observa la alerta activa actual de un usuario.
      */
     fun obtenerAlertaActiva(usuarioId: Int): Flow<Alerta?>
+
+    /**
+     * Observa todas las alertas activas de la comunidad en tiempo real.
+     */
+    fun obtenerAlertasVecinalesActivas(): Flow<List<Alerta>>
 }

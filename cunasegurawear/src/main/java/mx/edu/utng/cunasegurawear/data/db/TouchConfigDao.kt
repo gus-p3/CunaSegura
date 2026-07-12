@@ -11,6 +11,10 @@ interface TouchConfigDao {
     @Query("SELECT * FROM touch_config ORDER BY tapNumber ASC")
     fun getAllConfigs(): Flow<List<TouchConfig>>
 
+    /** Consulta puntual (no reactiva) de todos los configs — usada para construir payloads BLE. */
+    @Query("SELECT * FROM touch_config ORDER BY tapNumber ASC")
+    suspend fun getAllConfigsNow(): List<TouchConfig>
+
     @Query("SELECT * FROM touch_config WHERE tapNumber = :taps LIMIT 1")
     suspend fun getConfigForTaps(taps: Int): TouchConfig?
 

@@ -33,7 +33,28 @@ class HomeViewModel(
 
     private fun cargarUsuarioActual() {
         viewModelScope.launch {
-            _usuario.value = obtenerUsuarioActualUseCase()
+            // Obtenemos el usuario de Room que representa la sesión activa
+            val localUser = obtenerUsuarioActualUseCase()
+            if (localUser != null) {
+                _usuario.value = localUser
+            } else {
+                // Fallback a Firebase Auth si Room está vacío temporalmente
+                val firebaseUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                if (firebaseUser != null) {
+                    val nombre = when {
+                        !firebaseUser.displayName.isNullOrBlank() -> firebaseUser.displayName!!
+                        else -> firebaseUser.email?.substringBefore("@") ?: "Vecino"
+                    }
+                    _usuario.value = Usuario(
+                        id = 0,
+                        nombre = nombre,
+                        telefono = "",
+                        correo = firebaseUser.email ?: "",
+                        password = "",
+                        rol = "usuario"
+                    )
+                }
+            }
         }
     }
 

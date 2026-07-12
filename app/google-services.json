@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "11109752929",
+    "project_id": "cunasegura-e03a8",
+    "storage_bucket": "cunasegura-e03a8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:11109752929:android:a1c726bd6f48099593ca20",
+        "android_client_info": {
+          "package_name": "mx.edu.utng.cunasegura"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDhzMpXifxkGly0Q4SbTgsFSKojHm_iFAQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

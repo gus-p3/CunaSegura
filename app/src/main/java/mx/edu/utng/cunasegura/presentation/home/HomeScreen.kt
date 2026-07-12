@@ -3,6 +3,7 @@ package mx.edu.utng.cunasegura.presentation.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
@@ -17,6 +18,12 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import com.google.android.gms.location.LocationServices
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,16 +41,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private val AzulCunaSegura = Color(0xFF1F4E79)
+// Color definitions
 private val RojoSOS = Color(0xFFD32F2F)
+private val AzulCunaSegura = Color(0xFF1F4E79)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onNavigateToEmergency: (Long) -> Unit,
-    onNavigateToContacts: () -> Unit,
-    onNavigateToDevices: () -> Unit,
-    onNavigateToMap: () -> Unit
+    onNavigateToEmergency: (Int) -> Unit
 ) {
     val context = LocalContext.current
     val viewModel: HomeViewModel = viewModel(
@@ -57,6 +62,47 @@ fun HomeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var showLocationDialog by remember { mutableStateOf(false) }
+    var currentGpsCoords by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (granted) {
+            try {
+                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                    if (location != null) {
+                        currentGpsCoords = Pair(location.latitude, location.longitude)
+                    }
+                }
+            } catch (e: SecurityException) {
+                // Ignore
+            }
+        }
+    }
+
+    val obtenerCoordenadasActuales = {
+        val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (hasFine || hasCoarse) {
+            try {
+                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                    if (location != null) {
+                        currentGpsCoords = Pair(location.latitude, location.longitude)
+                    }
+                }
+            } catch (e: SecurityException) {
+                // Ignore
+            }
+        } else {
+            requestPermissionLauncher.launch(
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+            )
+        }
+    }
 
     // Sustained press state
     var isPressed by remember { mutableStateOf(false) }
@@ -65,7 +111,7 @@ fun HomeScreen(
     // Listen for alert creation to navigate
     LaunchedEffect(alertaCreada, alertaId) {
         if (alertaCreada && alertaId != null) {
-            onNavigateToEmergency(alertaId!!.toLong())
+            onNavigateToEmergency(alertaId!!)
             viewModel.resetAlertaState()
         }
     }
@@ -102,52 +148,17 @@ fun HomeScreen(
                     containerColor = AzulCunaSegura
                 )
             )
-        },
-        bottomBar = {
-            NavigationBar(
-                containerColor = Color.White,
-                tonalElevation = 8.dp
-            ) {
-                NavigationBarItem(
-                    selected = true,
-                    onClick = { /* Ya estamos en Home */ },
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
-                    label = { Text("Inicio") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = AzulCunaSegura,
-                        selectedTextColor = AzulCunaSegura,
-                        indicatorColor = AzulCunaSegura.copy(alpha = 0.1f)
-                    )
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToContacts,
-                    icon = { Icon(Icons.Default.Call, contentDescription = "Contactos") },
-                    label = { Text("Contactos") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToDevices,
-                    icon = { Icon(Icons.Default.Settings, contentDescription = "Dispositivos") },
-                    label = { Text("Dispositivos") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToMap,
-                    icon = { Icon(Icons.Default.LocationOn, contentDescription = "Mapa") },
-                    label = { Text("Mapa") }
-                )
-            }
         }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(androidx.compose.foundation.rememberScrollState())
                 .padding(paddingValues)
                 .background(Color(0xFFF7F9FC))
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Bienvenida
             val userName = usuarioState.value?.nombre ?: "Vecino"
@@ -155,7 +166,7 @@ fun HomeScreen(
                 text = "¡Hola, $userName!",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = AzulCunaSegura,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(top = 16.dp)
             )
 
@@ -230,76 +241,88 @@ fun HomeScreen(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Grid de 2x2 con servicios
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f, fill = false),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            // Grid de 2x2 con servicios convertido a Rows estáticas
+            Column(
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                item {
-                    ServiceCard(
-                        title = "911 / Policía",
-                        icon = Icons.Default.Warning,
-                        color = RojoSOS,
-                        onClick = {
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Función disponible próximamente")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        ServiceCard(
+                            title = "911 / Policía",
+                            icon = Icons.Default.Warning,
+                            color = RojoSOS,
+                            onClick = {
+                                val intent = android.content.Intent(
+                                    android.content.Intent.ACTION_DIAL,
+                                    android.net.Uri.parse("tel:911")
+                                )
+                                context.startActivity(intent)
                             }
-                        }
-                    )
-                }
-                item {
-                    ServiceCard(
-                        title = "Ambulancia IMSS",
-                        icon = Icons.Default.Favorite,
-                        color = Color(0xFFE91E63),
-                        onClick = {
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Función disponible próximamente")
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        ServiceCard(
+                            title = "Ambulancia IMSS",
+                            icon = Icons.Default.Favorite,
+                            color = Color(0xFFE91E63),
+                            onClick = {
+                                val intent = android.content.Intent(
+                                    android.content.Intent.ACTION_DIAL,
+                                    android.net.Uri.parse("tel:800-623-2323")
+                                )
+                                context.startActivity(intent)
                             }
-                        }
-                    )
+                        )
+                    }
                 }
-                item {
-                    ServiceCard(
-                        title = "Bomberos Dto.",
-                        icon = Icons.Default.Star,
-                        color = Color(0xFFFF9800),
-                        onClick = {
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Función disponible próximamente")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        ServiceCard(
+                            title = "Bomberos Dto.",
+                            icon = Icons.Default.Star,
+                            color = Color(0xFFFF9800),
+                            onClick = {
+                                val intent = android.content.Intent(
+                                    android.content.Intent.ACTION_DIAL,
+                                    android.net.Uri.parse("tel:068")
+                                )
+                                context.startActivity(intent)
                             }
-                        }
-                    )
-                }
-                item {
-                    ServiceCard(
-                        title = "Mi Ubicación",
-                        icon = Icons.Default.LocationOn,
-                        color = Color(0xFF4CAF50),
-                        onClick = {
-                            showLocationDialog = true
-                        }
-                    )
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        ServiceCard(
+                            title = "Mi Ubicación",
+                            icon = Icons.Default.LocationOn,
+                            color = Color(0xFF4CAF50),
+                            onClick = {
+                                obtenerCoordenadasActuales()
+                                showLocationDialog = true
+                            }
+                        )
+                    }
                 }
             }
         }
 
-        // Dialogo para mostrar Mi Ubicación desde Room
+        // Dialogo para mostrar Mi Ubicación Real
         if (showLocationDialog) {
-            val user = usuarioState.value
             AlertDialog(
                 onDismissRequest = { showLocationDialog = false },
                 title = { Text("Mi Ubicación Actual") },
                 text = {
                     Text(
-                        if (user != null) {
-                            "Latitud: ${user.latActual}\nLongitud: ${user.lonActual}"
+                        if (currentGpsCoords != null) {
+                            "Latitud: ${currentGpsCoords!!.first}\nLongitud: ${currentGpsCoords!!.second}"
                         } else {
-                            "Cargando coordenadas del usuario..."
+                            "Obteniendo coordenadas del GPS..."
                         }
                     )
                 },

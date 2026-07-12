@@ -1,28 +1,36 @@
 package mx.edu.utng.cunasegura.presentation.contacts
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.edu.utng.cunasegura.domain.model.ContactoEmergencia
 
+// Colors will use MaterialTheme
 private val AzulCunaSegura = Color(0xFF1F4E79)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,38 +46,74 @@ fun ContactsScreen() {
     val puedeAgregar = contactos.size < MAX_CONTACTOS
 
     Scaffold(
+        modifier = Modifier.imePadding(),
+        containerColor = MaterialTheme.colorScheme.primary,
         topBar = {
-            TopAppBar(title = { Text("Contactos de Confianza") })
+            TopAppBar(
+                title = {
+                    Text(
+                        "Contactos de Confianza",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = AzulCunaSegura
+                )
+            )
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { viewModel.onShowAddSheet(true) },
+                onClick = { if (puedeAgregar) viewModel.onShowAddSheet(true) },
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = { Text(if (puedeAgregar) "Añadir contacto" else "Máximo 5 contactos") },
-                containerColor = if (puedeAgregar) AzulCunaSegura else Color.Gray
+                containerColor = if (puedeAgregar) MaterialTheme.colorScheme.primary else Color.Gray,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             )
         }
     ) { padding ->
         if (contactos.isEmpty()) {
             Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF7F9FC))
+                    .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Aún no tienes contactos de confianza")
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        Icons.Default.People,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                        modifier = Modifier.size(72.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Aún no tienes contactos de confianza",
+                        color = Color.Gray,
+                        fontSize = 15.sp
+                    )
+                    Text(
+                        "Agrega hasta 5 contactos que recibirán tus alertas",
+                        color = Color.Gray,
+                        fontSize = 12.sp
+                    )
+                }
             }
         } else {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
+                    .background(Color(0xFFF7F9FC))
                     .padding(padding)
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(contactos, key = { it.id }) { contacto ->
                     ContactoItem(
                         contacto = contacto,
                         onEliminar = { viewModel.onEliminarContacto(contacto.id) }
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
         }
@@ -88,11 +132,16 @@ private fun ContactoItem(
     contacto: ContactoEmergencia,
     onEliminar: () -> Unit
 ) {
+    val context = LocalContext.current
     var mostrarConfirmacion by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = { /* no-op, solo decorativo */ }
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(2.dp, RoundedCornerShape(12.dp)),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        onClick = { /* no-op */ }
     ) {
         Row(
             modifier = Modifier
@@ -102,27 +151,59 @@ private fun ContactoItem(
         ) {
             Box(
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
-                    .background(AzulCunaSegura),
+                    .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = iniciales(contacto.nombre), color = Color.White, fontWeight = FontWeight.Bold)
+                Text(
+                    text = iniciales(contacto.nombre),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(contacto.nombre, fontWeight = FontWeight.Bold)
-                Text("${contacto.relacion}", fontSize = androidx.compose.ui.unit.TextUnit.Unspecified)
+                Text(
+                    contacto.nombre,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.DarkGray,
+                    fontSize = 15.sp
+                )
+                Text(
+                    contacto.relacion,
+                    color = Color.Gray,
+                    fontSize = 13.sp
+                )
+                Text(
+                    contacto.telefono,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
             }
 
-            IconButton(onClick = { /* Intent.ACTION_DIAL se agrega en un sprint con permisos de llamada */ }) {
-                Icon(Icons.Default.Call, contentDescription = "Llamar")
+            // Botón llamar real
+            IconButton(onClick = {
+                val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${contacto.telefono}"))
+                context.startActivity(intent)
+            }) {
+                Icon(
+                    Icons.Default.Call,
+                    contentDescription = "Llamar",
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
 
             IconButton(onClick = { mostrarConfirmacion = true }) {
-                Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Eliminar",
+                    tint = Color(0xFFD32F2F)
+                )
             }
         }
     }
@@ -130,16 +211,18 @@ private fun ContactoItem(
     if (mostrarConfirmacion) {
         AlertDialog(
             onDismissRequest = { mostrarConfirmacion = false },
-            title = { Text("Eliminar contacto") },
-            text = { Text("¿Seguro que quieres eliminar a ${contacto.nombre} de tus contactos de confianza?") },
+            title = { Text("Eliminar contacto", color = Color.DarkGray) },
+            text = { Text("¿Seguro que quieres eliminar a ${contacto.nombre}?", color = Color.Gray) },
             confirmButton = {
                 TextButton(onClick = {
                     onEliminar()
                     mostrarConfirmacion = false
-                }) { Text("Eliminar") }
+                }) { Text("Eliminar", color = Color(0xFFD32F2F)) }
             },
             dismissButton = {
-                TextButton(onClick = { mostrarConfirmacion = false }) { Text("Cancelar") }
+                TextButton(onClick = { mostrarConfirmacion = false }) {
+                    Text("Cancelar", color = MaterialTheme.colorScheme.primary)
+                }
             }
         )
     }
@@ -156,15 +239,26 @@ private fun AddContactDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Añadir contacto") },
+        containerColor = Color.White,
+        title = {
+            Text(
+                "Añadir contacto de confianza",
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
+        },
         text = {
             Column {
                 OutlinedTextField(
                     value = form.nombre,
                     onValueChange = viewModel::onNombreChange,
-                    label = { Text("Nombre") },
+                    label = { Text("Nombre completo") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary
+                    )
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
@@ -173,7 +267,11 @@ private fun AddContactDialog(
                     label = { Text("Teléfono") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary
+                    )
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -186,7 +284,13 @@ private fun AddContactDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Relación") },
-                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            focusedLabelColor = MaterialTheme.colorScheme.primary
+                        )
                     )
                     ExposedDropdownMenu(
                         expanded = expandedRelacion,
@@ -206,10 +310,15 @@ private fun AddContactDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { viewModel.onAgregarContacto() }) { Text("Guardar") }
+            Button(
+                onClick = { viewModel.onAgregarContacto() },
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) { Text("Guardar", color = Color.White) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar", color = Color.Gray)
+            }
         }
     )
 }
