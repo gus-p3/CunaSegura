@@ -33,6 +33,10 @@ class MainActivity : ComponentActivity() {
             startAlertaId = alertaId
         }
 
+        // Start location tracking service
+        val serviceIntent = Intent(this, mx.edu.utng.cunasegura.data.location.LocationTrackerService::class.java)
+        ContextCompat.startForegroundService(this, serviceIntent)
+
         setContent {
             CunaSeguraTheme {
                 NavGraph(

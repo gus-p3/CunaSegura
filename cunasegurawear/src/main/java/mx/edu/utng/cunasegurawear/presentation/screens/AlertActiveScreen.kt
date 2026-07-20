@@ -48,10 +48,10 @@ fun AlertActiveScreen(state: AlertState) {
     }
     
     val borderColor = when (state.activeActionName) {
-        "MENSAJE_SMS" -> Color(0xFF4CAF50) // Verde
-        "UBICACION_TIEMPO_REAL" -> Color(0xFF2196F3) // Azul
-        "ALARMA_TV" -> Color(0xFFFF9800) // Naranja
-        "LLAMAR_911" -> Color(0xFFF44336) // Rojo
+        "MENSAJE_SMS" -> androidx.wear.compose.material.MaterialTheme.colors.secondary // Verde
+        "UBICACION_TIEMPO_REAL" -> androidx.wear.compose.material.MaterialTheme.colors.primary // Azul
+        "ALARMA_TV" -> androidx.wear.compose.material.MaterialTheme.colors.secondaryVariant // Naranja
+        "LLAMAR_911" -> androidx.wear.compose.material.MaterialTheme.colors.error // Rojo
         else -> MaterialTheme.colors.error
     }
 
@@ -97,7 +97,7 @@ fun SmsActiveContent(contactsNotified: Int) {
         label = "smsAlpha"
     )
 
-    val smsColor = Color(0xFF4CAF50)
+    val smsColor = androidx.wear.compose.material.MaterialTheme.colors.secondary
 
     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -176,7 +176,7 @@ fun GpsActiveContent(gpsAddress: String) {
         label = "gpsAlpha"
     )
 
-    val gpsColor = Color(0xFF2196F3)
+    val gpsColor = androidx.wear.compose.material.MaterialTheme.colors.primary
 
     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -249,7 +249,7 @@ fun BocinaActiveContent() {
         label = "bocinaAlpha"
     )
 
-    val alarmColor = Color(0xFFFF9800)
+    val alarmColor = androidx.wear.compose.material.MaterialTheme.colors.secondaryVariant
 
     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -341,7 +341,7 @@ fun Call911ActiveContent() {
         label = "911Alpha"
     )
 
-    val red911Color = Color(0xFFF44336)
+    val red911Color = androidx.wear.compose.material.MaterialTheme.colors.error
 
     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -382,7 +382,7 @@ fun Call911ActiveContent() {
                     quadraticTo(w * 0.52f, h * 0.72f, w * 0.42f, h * 0.68f)
                     close()
                 }
-                drawPath(path = phonePath, color = Color.White)
+                drawPath(path = phonePath, color = androidx.compose.ui.graphics.Color.White)
             }
 
             Text(

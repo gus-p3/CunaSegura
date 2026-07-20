@@ -165,8 +165,8 @@ class WatchConfigViewModelFactory(private val context: Context) : ViewModelProvi
 // ──────────────────────────────────────────────────────────────────────────────
 
 // MaterialTheme colors will be used
-private val VerdeVinculado = Color(0xFF4CAF50)
-private val NaranjaDesvinculado = Color(0xFFFF9800)
+private val VerdeVinculado @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.secondary
+private val NaranjaDesvinculado @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.tertiary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -180,10 +180,10 @@ fun WatchConfigScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Configuración SmartWatch", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Configuración SmartWatch", color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Regresar", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Regresar", tint = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -194,7 +194,7 @@ fun WatchConfigScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color(0xFFF7F9FC)),
+                .background(androidx.compose.material3.MaterialTheme.colorScheme.background),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -203,7 +203,7 @@ fun WatchConfigScreen(onBack: () -> Unit) {
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (uiState.watchVinculado) Color(0xFFE8F5E9) else Color(0xFFFFF3E0)
+                        containerColor = if (uiState.watchVinculado) androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer else androidx.compose.material3.MaterialTheme.colorScheme.tertiaryContainer
                     ),
                     modifier = Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(16.dp))
                 ) {
@@ -217,7 +217,7 @@ fun WatchConfigScreen(onBack: () -> Unit) {
                             ),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Watch, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
+                            Icon(Icons.Default.Watch, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(28.dp))
                         }
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -241,7 +241,7 @@ fun WatchConfigScreen(onBack: () -> Unit) {
             item {
                 Card(
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)),
+                    colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.secondaryContainer),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.Top) {
@@ -265,7 +265,7 @@ fun WatchConfigScreen(onBack: () -> Unit) {
             item {
                 Card(
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                     modifier = Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(16.dp))
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -280,7 +280,7 @@ fun WatchConfigScreen(onBack: () -> Unit) {
                                 accionSeleccionada = accion,
                                 onAccionChange = { viewModel.onAccionChange(num, it) }
                             )
-                            if (num < 4) HorizontalDivider(color = Color(0xFFEEEEEE))
+                            if (num < 4) HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant)
                         }
                     }
                 }
@@ -363,7 +363,7 @@ private fun ToqueRow(
                     textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color(0xFFDDDDDD)
+                        unfocusedBorderColor = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant
                     ),
                     shape = RoundedCornerShape(8.dp)
                 )

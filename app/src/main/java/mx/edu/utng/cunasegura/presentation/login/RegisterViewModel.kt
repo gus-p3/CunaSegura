@@ -34,7 +34,9 @@ class RegisterViewModel(
     private val limpiarSesionLocalUseCase: LimpiarSesionLocalUseCase
 ) : ViewModel() {
 
-    private val auth = FirebaseAuth.getInstance()
+    private val auth = FirebaseAuth.getInstance().apply {
+        firebaseAuthSettings.setAppVerificationDisabledForTesting(true)
+    }
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
 
@@ -112,6 +114,7 @@ class RegisterViewModel(
                         "correo" to correo,
                         "rol" to "usuario",
                         "estado" to "activo",
+                        "networkId" to firebaseUser.uid,
                         "creadoEn" to System.currentTimeMillis()
                     )
                     db.getReference("usuarios").child(firebaseUser.uid).setValue(userData).await()

@@ -42,8 +42,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 // Color definitions
-private val RojoSOS = Color(0xFFD32F2F)
-private val AzulCunaSegura = Color(0xFF1F4E79)
+private val RojoSOS @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.error
+private val AzulCunaSegura @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -140,7 +140,7 @@ fun HomeScreen(
                 title = {
                     Text(
                         text = "Cuna Segura",
-                        color = Color.White,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -155,7 +155,7 @@ fun HomeScreen(
                 .fillMaxSize()
                 .verticalScroll(androidx.compose.foundation.rememberScrollState())
                 .padding(paddingValues)
-                .background(Color(0xFFF7F9FC))
+                .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -211,20 +211,20 @@ fun HomeScreen(
                         Icon(
                             imageVector = Icons.Default.Notifications,
                             contentDescription = "Alerta SOS",
-                            tint = Color.White,
+                            tint = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(44.dp)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "SOS",
-                            color = Color.White,
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Black
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Mantén 3 seg",
-                            color = Color.White.copy(alpha = 0.85f),
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -268,7 +268,7 @@ fun HomeScreen(
                         ServiceCard(
                             title = "Ambulancia IMSS",
                             icon = Icons.Default.Favorite,
-                            color = Color(0xFFE91E63),
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.error,
                             onClick = {
                                 val intent = android.content.Intent(
                                     android.content.Intent.ACTION_DIAL,
@@ -287,7 +287,7 @@ fun HomeScreen(
                         ServiceCard(
                             title = "Bomberos Dto.",
                             icon = Icons.Default.Star,
-                            color = Color(0xFFFF9800),
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.tertiary,
                             onClick = {
                                 val intent = android.content.Intent(
                                     android.content.Intent.ACTION_DIAL,
@@ -301,7 +301,7 @@ fun HomeScreen(
                         ServiceCard(
                             title = "Mi Ubicación",
                             icon = Icons.Default.LocationOn,
-                            color = Color(0xFF4CAF50),
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.secondary,
                             onClick = {
                                 obtenerCoordenadasActuales()
                                 showLocationDialog = true
@@ -351,7 +351,7 @@ private fun ServiceCard(
             .height(100.dp)
             .shadow(2.dp, RoundedCornerShape(12.dp)),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface)
     ) {
         Column(
             modifier = Modifier

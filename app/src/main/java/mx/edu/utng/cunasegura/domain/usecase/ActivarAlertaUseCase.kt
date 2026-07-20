@@ -14,9 +14,10 @@ class ActivarAlertaUseCase(
      * Crea una Alerta con estado='activa', fueAtendida=false, esFalsaAlarma=false y la guarda.
      * @return El ID generado para la alerta.
      */
-    suspend operator fun invoke(usuarioId: Int, latitud: Double, longitud: Double): Long {
+    suspend operator fun invoke(usuarioId: Int, nombreUsuario: String, latitud: Double, longitud: Double): Long {
         val alerta = Alerta(
             usuarioId = usuarioId,
+            nombreUsuario = nombreUsuario,
             estado = "activa",
             latitud = latitud,
             longitud = longitud,

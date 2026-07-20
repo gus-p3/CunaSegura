@@ -33,6 +33,7 @@ class AlertaRepositoryImpl(
         val map = mapOf(
             "id" to alertaConId.id,
             "usuarioId" to alertaConId.usuarioId,
+            "nombreUsuario" to alertaConId.nombreUsuario,
             "estado" to alertaConId.estado,
             "latitud" to alertaConId.latitud,
             "longitud" to alertaConId.longitud,
@@ -111,6 +112,7 @@ class AlertaRepositoryImpl(
         AlertaEntity(
             id = this.id,
             usuarioId = this.usuarioId,
+            nombreUsuario = this.nombreUsuario,
             estado = this.estado,
             latitud = this.latitud,
             longitud = this.longitud,
@@ -123,6 +125,7 @@ class AlertaRepositoryImpl(
         Alerta(
             id = this.id,
             usuarioId = this.usuarioId,
+            nombreUsuario = this.nombreUsuario,
             estado = this.estado,
             latitud = this.latitud,
             longitud = this.longitud,

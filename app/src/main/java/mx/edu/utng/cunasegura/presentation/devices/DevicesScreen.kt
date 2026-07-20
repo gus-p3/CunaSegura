@@ -33,9 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-private val AzulCunaSegura = Color(0xFF1F4E79)
-private val ColorVinculado = Color(0xFF4CAF50)
-private val ColorNoVinculado = Color(0xFF9E9E9E)
+private val AzulCunaSegura @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
+private val ColorVinculado @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.secondary
+private val ColorNoVinculado @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.outline
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,7 +58,7 @@ fun DevicesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dispositivos Vinculados", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Dispositivos Vinculados", color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AzulCunaSegura)
             )
         }
@@ -67,7 +67,7 @@ fun DevicesScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color(0xFFF7F9FC))
+                .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -84,7 +84,7 @@ fun DevicesScreen(
             ) {
                 Text(
                     text = iniciales,
-                    color = Color.White,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -133,7 +133,7 @@ fun DevicesScreen(
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     Card(
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                         modifier = Modifier
                             .fillMaxWidth()
                             .shadow(2.dp, RoundedCornerShape(16.dp))
@@ -195,7 +195,7 @@ private fun DeviceCard(
             .shadow(2.dp, RoundedCornerShape(16.dp))
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface)
     ) {
         Column(
             modifier = Modifier

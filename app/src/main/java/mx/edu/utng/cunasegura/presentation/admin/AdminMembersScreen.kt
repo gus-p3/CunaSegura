@@ -21,9 +21,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.edu.utng.cunasegura.domain.model.Usuario
 
-private val AzulCunaSegura = Color(0xFF1F4E79)
-private val VerdeAdmin = Color(0xFF4CAF50)
-private val RojoAdmin = Color(0xFFD32F2F)
+private val AzulCunaSegura @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
+private val VerdeAdmin @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.secondary
+private val RojoAdmin @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.error
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,7 +38,7 @@ fun AdminMembersScreen() {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Gestión de Miembros", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Gestión de Miembros", color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AzulCunaSegura)
             )
         }
@@ -46,12 +46,12 @@ fun AdminMembersScreen() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF7F9FC))
+                .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
         ) {
             TabRow(
                 selectedTabIndex = selectedTabIndex,
-                containerColor = Color.White,
+                containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
                 contentColor = AzulCunaSegura
             ) {
                 Tab(
@@ -76,7 +76,7 @@ fun AdminMembersScreen() {
                         item {
                             Card(
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
@@ -108,7 +108,7 @@ private fun MiembroCard(usuario: Usuario) {
     val iniciales = usuario.nombre.trim().split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.first().uppercase() }
     Card(
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth().shadow(1.dp, RoundedCornerShape(12.dp))
     ) {
         Row(
@@ -119,7 +119,7 @@ private fun MiembroCard(usuario: Usuario) {
                 modifier = Modifier.size(44.dp).clip(CircleShape).background(AzulCunaSegura),
                 contentAlignment = Alignment.Center
             ) {
-                Text(iniciales, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(iniciales, color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -129,7 +129,7 @@ private fun MiembroCard(usuario: Usuario) {
             }
             Box(
                 modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(
-                    if (usuario.estado == "activo") Color(0xFFE8F5E9) else Color(0xFFFFEBEE)
+                    if (usuario.estado == "activo") androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer else androidx.compose.material3.MaterialTheme.colorScheme.errorContainer
                 ).padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(

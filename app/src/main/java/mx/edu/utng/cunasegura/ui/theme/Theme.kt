@@ -258,8 +258,8 @@ val unspecified_scheme = ColorFamily(
 @Composable
 fun CunaSeguraTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // Dynamic color is disabled by default to use custom theme colors
+    dynamicColor: Boolean = false,
     content: @Composable() () -> Unit
 ) {
     val colorScheme = when {

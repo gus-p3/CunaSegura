@@ -132,13 +132,13 @@ fun StatusScreen(
                             lineTo(w * 0.25f, h * 0.35f)
                             close()
                         }
-                        drawPath(shieldPath, Color.White, style = Stroke(width = 3.dp.toPx()))
+                        drawPath(shieldPath, androidx.compose.ui.graphics.Color.White, style = Stroke(width = 3.dp.toPx()))
                         val checkPath = androidx.compose.ui.graphics.Path().apply {
                             moveTo(w * 0.4f, h * 0.55f)
                             lineTo(w * 0.48f, h * 0.62f)
                             lineTo(w * 0.62f, h * 0.45f)
                         }
-                        drawPath(checkPath, Color.White, style = Stroke(width = 3.dp.toPx()))
+                        drawPath(checkPath, androidx.compose.ui.graphics.Color.White, style = Stroke(width = 3.dp.toPx()))
                     }
                 }
             }
@@ -163,7 +163,7 @@ fun StatusScreen(
                         onClick = onSimulate1Tap,
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = primaryColor,
-                            contentColor = Color.White
+                            contentColor = androidx.compose.ui.graphics.Color.White
                         ),
                         modifier = Modifier.size(width = 72.dp, height = 32.dp)
                     ) {
@@ -173,7 +173,7 @@ fun StatusScreen(
                         onClick = onSimulate2Taps,
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = primaryColor,
-                            contentColor = Color.White
+                            contentColor = androidx.compose.ui.graphics.Color.White
                         ),
                         modifier = Modifier.size(width = 72.dp, height = 32.dp)
                     ) {

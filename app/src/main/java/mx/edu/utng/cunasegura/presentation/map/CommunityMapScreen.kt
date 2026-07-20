@@ -1,6 +1,7 @@
 package mx.edu.utng.cunasegura.presentation.map
 
 import android.Manifest
+import java.io.File
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -44,8 +45,8 @@ import mx.edu.utng.cunasegura.R // for default icons if needed
 import java.text.SimpleDateFormat
 import java.util.*
 
-private val AzulCunaSegura = Color(0xFF1F4E79)
-private val RojoSOS = Color(0xFFD32F2F)
+private val AzulCunaSegura @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
+private val RojoSOS @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.error
 // Dolores Hidalgo, Gto. — posición por defecto
 private val DEFAULT_LOCATION = GeoPoint(21.1565, -100.9327)
 
@@ -102,7 +103,11 @@ fun CommunityMapScreen() {
 
     // Configuramos Osmdroid user agent para que el servidor deje descargar mapas
     LaunchedEffect(Unit) {
-        Configuration.getInstance().userAgentValue = context.packageName
+        val osmConfig = Configuration.getInstance()
+        osmConfig.userAgentValue = context.packageName
+        val basePath = File(context.cacheDir, "osmdroid")
+        osmConfig.osmdroidBasePath = basePath
+        osmConfig.osmdroidTileCache = File(basePath, "tiles")
     }
 
     Scaffold(
@@ -113,11 +118,11 @@ fun CommunityMapScreen() {
                         Icon(
                             Icons.Default.LocationOn,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("GPS — Mapa Comunitario", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text("GPS — Mapa Comunitario", color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AzulCunaSegura)
@@ -181,7 +186,7 @@ fun CommunityMapScreen() {
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .padding(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.92f)),
+                    colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)),
                     shape = RoundedCornerShape(8.dp),
                     elevation = CardDefaults.cardElevation(4.dp)
                 ) {
@@ -299,7 +304,7 @@ private fun AlertaItem(
     }
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3F3)),
+        colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.errorContainer),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
@@ -317,7 +322,7 @@ private fun AlertaItem(
                     .background(RojoSOS),
                 contentAlignment = Alignment.Center
             ) {
-                Text(iniciales, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(iniciales, color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             }
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -354,7 +359,7 @@ private fun AlertaItem(
                         .background(RojoSOS),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("911", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    Text("911", color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

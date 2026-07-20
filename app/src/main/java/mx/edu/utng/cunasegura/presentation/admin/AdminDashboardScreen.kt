@@ -26,9 +26,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-private val AzulCunaSegura = Color(0xFF1F4E79)
-private val DoradoAdmin = Color(0xFFFFC107)
-private val VerdeAdmin = Color(0xFF4CAF50)
+private val AzulCunaSegura @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
+private val DoradoAdmin @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.tertiary
+private val VerdeAdmin @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.secondary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,7 +46,7 @@ fun AdminDashboardScreen() {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Resumen de Estado", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Resumen de Estado", color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AzulCunaSegura)
             )
         }
@@ -54,7 +54,7 @@ fun AdminDashboardScreen() {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF7F9FC))
+                .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
                 .padding(paddingValues),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -62,7 +62,7 @@ fun AdminDashboardScreen() {
             item {
                 Card(
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                     modifier = Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(16.dp))
                 ) {
                     Row(
@@ -135,18 +135,18 @@ fun AdminDashboardScreen() {
                 Spacer(modifier = Modifier.height(8.dp))
                 Card(
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                     modifier = Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(16.dp))
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         ModuloRow("🔥 Firebase Realtime DB", "Alertas en tiempo real entre vecinos", pendiente = true)
-                        HorizontalDivider(color = Color(0xFFE0E0E0))
+                        HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant)
                         ModuloRow("📲 FCM Push", "Notificaciones push a celulares y TV", pendiente = true)
-                        HorizontalDivider(color = Color(0xFFE0E0E0))
+                        HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant)
                         ModuloRow("📺 Smart TV App", "App de monitoreo en Android TV", pendiente = true)
-                        HorizontalDivider(color = Color(0xFFE0E0E0))
+                        HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant)
                         ModuloRow("⌚ BLE Smartwatch", "Comunicación Bluetooth con watch", pendiente = true)
-                        HorizontalDivider(color = Color(0xFFE0E0E0))
+                        HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant)
                         ModuloRow("🗺️ Mapa Comunitario", "Marcadores de vecinos en mapa", completado = true)
                     }
                 }
@@ -159,7 +159,7 @@ fun AdminDashboardScreen() {
 private fun StatCard(modifier: Modifier, titulo: String, valor: String, icon: ImageVector, color: Color) {
     Card(
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
         modifier = modifier.shadow(2.dp, RoundedCornerShape(12.dp))
     ) {
         Column(
@@ -187,7 +187,7 @@ private fun ModuloRow(nombre: String, descripcion: String, pendiente: Boolean = 
         Text(
             text = if (completado) "✅ Listo" else "🔧 Próx.",
             fontSize = 11.sp,
-            color = if (completado) Color(0xFF4CAF50) else Color(0xFFFF9800),
+            color = if (completado) androidx.compose.material3.MaterialTheme.colorScheme.secondary else androidx.compose.material3.MaterialTheme.colorScheme.tertiary,
             fontWeight = FontWeight.Bold
         )
     }

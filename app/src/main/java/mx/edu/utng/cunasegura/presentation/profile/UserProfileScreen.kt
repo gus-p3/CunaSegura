@@ -28,8 +28,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.edu.utng.cunasegura.di.AppModule
 import mx.edu.utng.cunasegura.domain.model.Usuario
 
-private val AzulCunaSegura = Color(0xFF1F4E79)
-private val RojoSOS = Color(0xFFD32F2F)
+private val AzulCunaSegura @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
+private val RojoSOS @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.error
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,13 +46,13 @@ fun UserProfileScreen(
     }
 
     Scaffold(
-        containerColor = Color(0xFFF7F9FC),
+        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
                     Text(
                         "Mi Perfil",
-                        color = Color.White,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -63,7 +63,7 @@ fun UserProfileScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF7F9FC))
+                .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
@@ -88,7 +88,7 @@ fun UserProfileScreen(
                     ?: "?"
                 Text(
                     text = iniciales,
-                    color = Color.White,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 32.sp
                 )
@@ -120,7 +120,7 @@ fun UserProfileScreen(
             // Info Card
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                 modifier = Modifier
                     .fillMaxWidth()
                     .shadow(2.dp, RoundedCornerShape(16.dp))
@@ -128,11 +128,11 @@ fun UserProfileScreen(
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (!usuario?.correo.isNullOrBlank()) {
                         ProfileRow(icon = Icons.Default.Email, label = "Correo", value = usuario?.correo ?: "")
-                        HorizontalDivider(color = Color(0xFFEEEEEE))
+                        HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant)
                     }
                     if (!usuario?.telefono.isNullOrBlank()) {
                         ProfileRow(icon = Icons.Default.Call, label = "Teléfono", value = usuario?.telefono ?: "")
-                        HorizontalDivider(color = Color(0xFFEEEEEE))
+                        HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant)
                     }
                     ProfileRow(icon = Icons.Default.Shield, label = "Estado", value = "Activo")
                 }
@@ -143,7 +143,7 @@ fun UserProfileScreen(
             // Acceso directo a configuración de dispositivos
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                 modifier = Modifier
                     .fillMaxWidth()
                     .shadow(2.dp, RoundedCornerShape(16.dp))
@@ -169,7 +169,7 @@ fun UserProfileScreen(
                                 .clip(RoundedCornerShape(20.dp))
                                 .background(
                                     if (mx.edu.utng.cunasegura.data.local.prefs.PreferencesManager(LocalContext.current).isWatchLinked())
-                                        Color(0xFFE8F5E9) else Color(0xFFFFF3E0)
+                                        androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer else androidx.compose.material3.MaterialTheme.colorScheme.tertiaryContainer
                                 )
                                 .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
@@ -178,7 +178,7 @@ fun UserProfileScreen(
                                     "Vinculado" else "Sin vincular",
                                 fontSize = 11.sp,
                                 color = if (mx.edu.utng.cunasegura.data.local.prefs.PreferencesManager(LocalContext.current).isWatchLinked())
-                                    Color(0xFF4CAF50) else Color(0xFFFF9800),
+                                    androidx.compose.material3.MaterialTheme.colorScheme.secondary else androidx.compose.material3.MaterialTheme.colorScheme.tertiary,
                                 fontWeight = FontWeight.Bold
                             )
                         }

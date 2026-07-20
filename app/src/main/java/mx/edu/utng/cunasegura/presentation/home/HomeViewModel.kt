@@ -66,6 +66,7 @@ class HomeViewModel(
         viewModelScope.launch {
             val generatedId = activarAlertaUseCase(
                 usuarioId = user.id,
+                nombreUsuario = user.nombre,
                 latitud = user.latActual,
                 longitud = user.lonActual
             )
