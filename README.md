@@ -21,14 +21,92 @@ Diseñado específicamente para centros de monitoreo, casetas de vigilancia o si
 ![Módulo TV](assets/tv_app_mockup.png)
 
 ## ⌚ Módulo Wear OS (Smartwatch)
-Una aplicación ligera para relojes inteligentes. Permite a los vecinos recibir notificaciones directas en su muñeca y disparar alertas de emergencia con un par de toques, sin necesidad de sacar el teléfono celular del bolsillo.
+Este módulo contiene la aplicación diseñada para relojes inteligentes con **Wear OS**. Ofrece una interfaz premium, rápida y accesible para activar alarmas silenciosas y alertas de emergencia directamente desde la muñeca.
+
+1. **Rastreo GPS en Tiempo Real**: Utiliza el sensor `GPS` nativo para rastrear coordenadas durante un SOS activo y traduce a direcciones mediante `Geocoder`.
+2. **Simulación de Toques Segura**: Cuenta con una pantalla de cuenta regresiva de 5 segundos con progreso circular que permite cancelar la alerta.
+3. **Chequeo de Vida (Life Check)**: Interfaz con efecto *glassmorphism* que le pregunta al usuario "¿ESTÁS BIEN?" ante sospechas de caídas o incidentes.
 
 ---
 ### Arquitectura y Tecnologías
-* **Frontend**: Jetpack Compose (Compose for TV, Compose for Wear OS).
+* **Frontend**: Jetpack Compose (Compose for TV, Compose for Wear OS, Material 3).
 * **Backend**: Firebase Realtime Database para la sincronización de nodos y cuentas de usuarios.
 * **Comunicaciones**: MQTT protocol (ideal para IoT y microcontroladores tipo ESP32).
-* **Tematización**: Tema unificado (Dark Blue) implementado a lo largo de todos los módulos usando esquemas semánticos de `MaterialTheme.colorScheme`.
+* **Tematización**: Tema unificado implementado a lo largo de todos los módulos usando esquemas semánticos de `MaterialTheme.colorScheme`.
+* **Inyección de Dependencias**: Hilt
+* **Almacenamiento Local**: Jetpack DataStore / Room
 
 ---
+
+## 🚀 Instrucciones para Ejecutar el Proyecto
+
+### Requisitos Previos
+- Android Studio **Meerkat** (2024.3) o superior.
+- JDK 17.
+- Android SDK con API Level **30+** (para el módulo móvil).
+- Wear OS SDK (API Level **30+**) para el módulo del reloj.
+- Un emulador Wear OS configurado en AVD Manager, o un reloj físico con Wear OS conectado via ADB.
+
+### Ejecutar el Módulo Móvil (`:app`)
+1. En la barra superior de Android Studio, seleccionar la configuración **`app`**.
+2. Seleccionar un emulador o dispositivo Android físico (API 30+).
+3. Presionar **▶ Run**.
+
+O desde la terminal (PowerShell):
+```powershell
+.\gradlew :app:installDebug
+```
+
+### Ejecutar el Módulo TV (`:cunaseguratv`)
+1. Cambiar la configuración de ejecución a **`cunaseguratv`**.
+2. Seleccionar un emulador Android TV (1080p).
+3. Presionar **▶ Run**.
+
+### Ejecutar el Módulo Wear OS (`:cunasegurawear`)
+1. Cambiar la configuración a **`cunasegurawear`**.
+2. Seleccionar un emulador Wear OS o reloj físico conectado.
+3. Presionar **▶ Run**.
+
+```powershell
+# Compilar y empacar todos los módulos
+.\gradlew assembleDebug
+```
+
+### Nota sobre configuración Kotlin / Room
+El proyecto usa Kotlin `2.4.0`. Para evitar incompatibilidades del compilador de anotaciones de Room (`kapt`), se forzó la versión del parser de metadatos en el módulo Wear:
+```kotlin
+// cunasegurawear/build.gradle.kts
+configurations.all {
+    resolutionStrategy {
+        force("org.jetbrains.kotlin:kotlin-metadata-jvm:2.4.0")
+    }
+}
+```
+
+---
+
+## 📁 Estructura del Repositorio
+
+```
+CunaSegura/
+├── app/                        # Módulo principal (Android Móvil)
+│   └── src/main/
+│       ├── java/               # Código fuente Kotlin (MVVM + Hilt)
+│       └── res/                # Recursos (layouts, drawables, strings)
+├── cunaseguratv/               # Módulo Smart TV
+│   └── src/main/
+│       └── java/               # Código fuente Compose for TV
+├── cunasegurawear/             # Módulo Wear OS (Smartwatch)
+│   └── src/main/
+│       └── java/               # Código fuente Compose for Wear OS
+├── evidencias/                 # Capturas de pantalla originales
+├── assets/                     # Mockups generados
+├── apk/                        # APKs generados de la aplicación
+├── build.gradle.kts            # Configuración raíz de Gradle
+├── settings.gradle.kts         # Configuración de módulos
+└── README.md                   # Este archivo
+```
+
+---
+
 *Cuna Segura - Cuidando a los nuestros, siempre conectados.*
