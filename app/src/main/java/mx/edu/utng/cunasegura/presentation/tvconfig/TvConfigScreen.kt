@@ -36,6 +36,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import mx.edu.utng.cunasegura.di.AppModule
 import mx.edu.utng.cunasegura.domain.model.Usuario
+import com.google.firebase.database.FirebaseDatabase
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
+import androidx.activity.compose.rememberLauncherForActivityResult
 import kotlin.random.Random
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -93,6 +97,27 @@ class TvConfigViewModel(private val context: Context) : ViewModel() {
     fun clearMessage() {
         _uiState.value = _uiState.value.copy(infoMessage = null)
     }
+
+    fun onQrScanned(contents: String) {
+        val tvId = if (contents.contains("tvId=")) {
+            contents.substringAfter("tvId=")
+        } else {
+            contents
+        }
+        
+        viewModelScope.launch {
+            val user = _uiState.value.usuario ?: return@launch
+            val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
+            val dbRef = FirebaseDatabase.getInstance().getReference("tvs").child(tvId).child("networkId")
+            dbRef.setValue(uid).addOnSuccessListener {
+                FirebaseDatabase.getInstance().getReference("usuarios").child(uid).child("networkId").setValue(uid)
+                mx.edu.utng.cunasegura.mqtt.MqttPublisher.publishTvVinculacion(tvId, uid)
+                onToggleTvVinculada(true)
+            }.addOnFailureListener {
+                _uiState.value = _uiState.value.copy(infoMessage = "Error al enlazar Smart TV")
+            }
+        }
+    }
 }
 
 class TvConfigViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
@@ -106,9 +131,9 @@ class TvConfigViewModelFactory(private val context: Context) : ViewModelProvider
 // Screen
 // ──────────────────────────────────────────────────────────────────────────────
 
-private val AzulCunaSegura = Color(0xFF1F4E79)
-private val VerdeVinculado = Color(0xFF4CAF50)
-private val GrisDesvinculado = Color(0xFF9E9E9E)
+private val AzulCunaSegura @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
+private val VerdeVinculado @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.secondary
+private val GrisDesvinculado @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.outline
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -117,9 +142,17 @@ fun TvConfigScreen(onBack: () -> Unit) {
     val viewModel: TvConfigViewModel = viewModel(factory = TvConfigViewModelFactory(context))
     val uiState by viewModel.uiState.collectAsState()
 
+    val scanLauncher = rememberLauncherForActivityResult(
+        contract = ScanContract(),
+        onResult = { result ->
+            if (result.contents != null) {
+                viewModel.onQrScanned(result.contents)
+            }
+        }
+    )
+
     LaunchedEffect(uiState.infoMessage) {
         if (uiState.infoMessage != null) {
-            // Limpiar mensaje tras mostrarse
             viewModel.clearMessage()
         }
     }
@@ -127,10 +160,10 @@ fun TvConfigScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Configuración Smart TV", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Configuración Smart TV", color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Regresar", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Regresar", tint = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AzulCunaSegura)
@@ -141,7 +174,7 @@ fun TvConfigScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color(0xFFF7F9FC))
+                .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -151,7 +184,7 @@ fun TvConfigScreen(onBack: () -> Unit) {
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (uiState.tvVinculada) Color(0xFFE8F5E9) else Color(0xFFECEFF1)
+                    containerColor = if (uiState.tvVinculada) androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer else androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant
                 ),
                 modifier = Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(16.dp))
             ) {
@@ -166,7 +199,7 @@ fun TvConfigScreen(onBack: () -> Unit) {
                             .background(if (uiState.tvVinculada) VerdeVinculado else GrisDesvinculado),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Tv, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
+                        Icon(Icons.Default.Tv, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(28.dp))
                     }
                     Spacer(modifier = Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
@@ -190,41 +223,48 @@ fun TvConfigScreen(onBack: () -> Unit) {
                 }
             }
 
-            // ── Generación de QR Dinámico Local ─────────────────────────────
+            // ── Lector QR en Teléfono ─────────────────────────────
             Card(
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                 modifier = Modifier.fillMaxWidth().shadow(3.dp, RoundedCornerShape(20.dp))
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        "Código QR de Vinculación",
-                        fontWeight = FontWeight.Bold,
+                        "VINCULAR NUEVA PANTALLA",
+                        fontWeight = FontWeight.Black,
                         fontSize = 16.sp,
+                        letterSpacing = 1.5.sp,
                         color = AzulCunaSegura
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "Escanea este código QR con la cámara de tu Smart TV para enlazar tu cuenta e iniciar el monitoreo vecinal en tiempo real.",
-                        fontSize = 13.sp,
+                        "Abre la app de Cuna Segura en tu Smart TV y escanea el código QR que aparece en pantalla.",
+                        fontSize = 14.sp,
                         color = Color.Gray,
                         textAlign = TextAlign.Center
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // QR Code dibujado por Canvas
-                    val linkData = "cunasegura://link_tv?user=${uiState.usuario?.telefono ?: "none"}"
-                    MockQrCode(
-                        data = linkData,
-                        modifier = Modifier
-                            .size(200.dp)
-                            .background(Color.White)
-                            .shadow(1.dp)
-                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    Button(
+                        onClick = {
+                            val options = ScanOptions()
+                            options.setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+                            options.setPrompt("Apunta al código QR en tu TV")
+                            options.setBeepEnabled(true)
+                            options.setBarcodeImageEnabled(false)
+                            scanLauncher.launch(options)
+                        },
+                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = AzulCunaSegura),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Escanear QR de la TV", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -240,7 +280,7 @@ fun TvConfigScreen(onBack: () -> Unit) {
             // ── Card de Info Leanback ──────────────────────────────────────
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)),
+                colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.secondaryContainer),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.Top) {
@@ -271,68 +311,4 @@ fun TvConfigScreen(onBack: () -> Unit) {
     }
 }
 
-/**
- * Dibuja un código QR realista usando Canvas de Compose.
- * Tiene los 3 marcadores cuadrados característicos y píxeles distribuidos de forma determinista basados en el texto.
- */
-@Composable
-fun MockQrCode(data: String, modifier: Modifier = Modifier) {
-    val seed = data.hashCode().toLong()
-    val random = remember(data) { Random(seed) }
 
-    Canvas(modifier = modifier.padding(12.dp)) {
-        val size = this.size.width
-        val dotsCount = 21 // Versión estándar 1 del código QR
-        val dotSize = size / dotsCount
-
-        // 1. Dibujar los tres marcadores de posición principales (esquinas superior-izquierda, superior-derecha, inferior-izquierda)
-        fun drawFinderPattern(offsetX: Float, offsetY: Float) {
-            // Cuadrado exterior (7x7 módulos)
-            drawRect(
-                color = Color.Black,
-                topLeft = Offset(offsetX, offsetY),
-                size = Size(dotSize * 7, dotSize * 7)
-            )
-            // Cuadrado interior blanco (5x5 módulos)
-            drawRect(
-                color = Color.White,
-                topLeft = Offset(offsetX + dotSize, offsetY + dotSize),
-                size = Size(dotSize * 5, dotSize * 5)
-            )
-            // Centro negro (3x3 módulos)
-            drawRect(
-                color = Color.Black,
-                topLeft = Offset(offsetX + dotSize * 2, offsetY + dotSize * 2),
-                size = Size(dotSize * 3, dotSize * 3)
-            )
-        }
-
-        // Fondo blanco total
-        drawRect(color = Color.White, size = Size(size, size))
-
-        // Marcadores
-        drawFinderPattern(0f, 0f) // Superior izquierda
-        drawFinderPattern(dotSize * (dotsCount - 7), 0f) // Superior derecha
-        drawFinderPattern(0f, dotSize * (dotsCount - 7)) // Inferior izquierda
-
-        // Dibujar píxeles aleatorios/deterministas
-        for (row in 0 until dotsCount) {
-            for (col in 0 until dotsCount) {
-                // Saltar las áreas de los marcadores de posición
-                val inTopLeft = row < 8 && col < 8
-                val inTopRight = row < 8 && col >= dotsCount - 8
-                val inBottomLeft = row >= dotsCount - 8 && col < 8
-                if (inTopLeft || inTopRight || inBottomLeft) continue
-
-                // Dibujar un píxel negro con ~50% de probabilidad
-                if (random.nextBoolean()) {
-                    drawRect(
-                        color = Color.Black,
-                        topLeft = Offset(col * dotSize, row * dotSize),
-                        size = Size(dotSize, dotSize)
-                    )
-                }
-            }
-        }
-    }
-}

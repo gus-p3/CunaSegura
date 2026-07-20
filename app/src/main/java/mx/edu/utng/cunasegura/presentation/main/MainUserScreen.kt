@@ -33,12 +33,12 @@ fun MainUserScreen(
     val navBackStackEntry by mainNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Home.route
 
-    val AzulCunaSegura = Color(0xFF1F4E79)
+    val AzulCunaSegura = androidx.compose.material3.MaterialTheme.colorScheme.primary
 
     Scaffold(
         bottomBar = {
             NavigationBar(
-                containerColor = Color.White,
+                containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
                 tonalElevation = 8.dp
             ) {
                 NavigationBarItem(

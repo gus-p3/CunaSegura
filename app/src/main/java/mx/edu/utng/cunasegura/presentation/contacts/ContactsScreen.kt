@@ -31,7 +31,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.edu.utng.cunasegura.domain.model.ContactoEmergencia
 
 // Colors will use MaterialTheme
-private val AzulCunaSegura = Color(0xFF1F4E79)
+private val AzulCunaSegura @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,7 +53,7 @@ fun ContactsScreen() {
                 title = {
                     Text(
                         "Contactos de Confianza",
-                        color = Color.White,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -76,7 +76,7 @@ fun ContactsScreen() {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFF7F9FC))
+                    .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
                     .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
@@ -104,7 +104,7 @@ fun ContactsScreen() {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFF7F9FC))
+                    .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
                     .padding(padding)
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -140,7 +140,7 @@ private fun ContactoItem(
             .fillMaxWidth()
             .shadow(2.dp, RoundedCornerShape(12.dp)),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
         onClick = { /* no-op */ }
     ) {
         Row(
@@ -158,7 +158,7 @@ private fun ContactoItem(
             ) {
                 Text(
                     text = iniciales(contacto.nombre),
-                    color = Color.White,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -202,7 +202,7 @@ private fun ContactoItem(
                 Icon(
                     Icons.Default.Delete,
                     contentDescription = "Eliminar",
-                    tint = Color(0xFFD32F2F)
+                    tint = androidx.compose.material3.MaterialTheme.colorScheme.error
                 )
             }
         }
@@ -217,7 +217,7 @@ private fun ContactoItem(
                 TextButton(onClick = {
                     onEliminar()
                     mostrarConfirmacion = false
-                }) { Text("Eliminar", color = Color(0xFFD32F2F)) }
+                }) { Text("Eliminar", color = androidx.compose.material3.MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
                 TextButton(onClick = { mostrarConfirmacion = false }) {
@@ -239,7 +239,7 @@ private fun AddContactDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
+        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
         title = {
             Text(
                 "Añadir contacto de confianza",
@@ -313,7 +313,7 @@ private fun AddContactDialog(
             Button(
                 onClick = { viewModel.onAgregarContacto() },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) { Text("Guardar", color = Color.White) }
+            ) { Text("Guardar", color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary) }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {

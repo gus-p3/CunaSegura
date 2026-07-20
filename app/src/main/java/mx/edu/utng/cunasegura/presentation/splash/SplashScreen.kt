@@ -22,8 +22,8 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import mx.edu.utng.cunasegura.di.AppModule
 
-private val AzulOscuro = Color(0xFF1F4E79)
-private val AzulMedio = Color(0xFF2E6DA4)
+private val AzulOscuro @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
+private val AzulMedio @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
 
 @Composable
 fun SplashScreen(
@@ -84,14 +84,14 @@ fun SplashScreen(
                     .size(140.dp)
                     .scale(scale)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.15f)),
+                    .background(androidx.compose.material3.MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
                     modifier = Modifier
                         .size(110.dp)
                         .clip(CircleShape)
-                        .background(Color.White),
+                        .background(androidx.compose.material3.MaterialTheme.colorScheme.onPrimary),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -107,7 +107,7 @@ fun SplashScreen(
 
             Text(
                 text = "CUNA SEGURA",
-                color = Color.White,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 4.sp
@@ -115,7 +115,7 @@ fun SplashScreen(
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = "ALERTA CIUDADANA · DOLORES HIDALGO",
-                color = Color.White.copy(alpha = 0.7f),
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
                 fontSize = 11.sp,
                 letterSpacing = 1.5.sp
             )
@@ -139,7 +139,7 @@ fun SplashScreen(
                             .size(8.dp)
                             .scale(dotScale)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.8f))
+                            .background(androidx.compose.material3.MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
                     )
                 }
             }

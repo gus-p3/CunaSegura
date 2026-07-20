@@ -25,11 +25,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.edu.utng.cunasegura.domain.model.Usuario
 
-private val AzulAdmin = Color(0xFF0D2137)
-private val AzulSecundario = Color(0xFF1F4E79)
-private val DoradoAdmin = Color(0xFFFFC107)
-private val VerdeAdmin = Color(0xFF4CAF50)
-private val RojoAdmin = Color(0xFFD32F2F)
+private val AzulAdmin @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.onPrimaryContainer
+private val AzulSecundario @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
+private val DoradoAdmin @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.tertiary
+private val VerdeAdmin @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.secondary
+private val RojoAdmin @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.error
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,17 +54,17 @@ fun AdminPanelScreen(
                         Icon(Icons.Default.Shield, contentDescription = null, tint = DoradoAdmin, modifier = Modifier.size(22.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
-                            Text("Panel de Administración", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text("Cuna Segura — Admin Global", color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
+                            Text("Panel de Administración", color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text("Cuna Segura — Admin Global", color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 11.sp)
                         }
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.recargar() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Recargar", tint = Color.White)
+                        Icon(Icons.Default.Refresh, contentDescription = "Recargar", tint = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary)
                     }
                     IconButton(onClick = onLogout) {
-                        Icon(Icons.Default.Logout, contentDescription = "Cerrar sesión", tint = Color.White)
+                        Icon(Icons.Default.Logout, contentDescription = "Cerrar sesión", tint = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AzulAdmin)
@@ -74,7 +74,7 @@ fun AdminPanelScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF0F4F8))
+                .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
                 .padding(paddingValues),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -106,8 +106,8 @@ fun AdminPanelScreen(
                             }
                             Spacer(modifier = Modifier.width(16.dp))
                             Column {
-                                Text("Bienvenido,", color = Color.White.copy(alpha = 0.7f), fontSize = 13.sp)
-                                Text(adminActual?.nombre ?: "Administrador", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                Text("Bienvenido,", color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 13.sp)
+                                Text(adminActual?.nombre ?: "Administrador", color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(DoradoAdmin))
                                     Spacer(modifier = Modifier.width(4.dp))
@@ -157,16 +157,16 @@ fun AdminPanelScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 Card(
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                     modifier = Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(16.dp))
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         AdminConfigRow(icon = Icons.Default.LocationOn, label = "Radio de detección automática", valor = "200 metros")
-                        HorizontalDivider(color = Color(0xFFE0E0E0))
+                        HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant)
                         AdminConfigRow(icon = Icons.Default.Security, label = "Tipo de red", valor = "GPS Abierta + QR")
-                        HorizontalDivider(color = Color(0xFFE0E0E0))
+                        HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant)
                         AdminConfigRow(icon = Icons.Default.Timer, label = "Tiempo anti-falsa alarma", valor = "5 segundos")
-                        HorizontalDivider(color = Color(0xFFE0E0E0))
+                        HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant)
                         AdminConfigRow(icon = Icons.Default.Notifications, label = "Check de vida cada", valor = "2 minutos")
                     }
                 }
@@ -181,7 +181,7 @@ fun AdminPanelScreen(
                 item {
                     Card(
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
@@ -206,18 +206,18 @@ fun AdminPanelScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 Card(
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                     modifier = Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(16.dp))
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         ModuloRow("🔥 Firebase Realtime DB", "Alertas en tiempo real entre vecinos", pendiente = true)
-                        HorizontalDivider(color = Color(0xFFE0E0E0))
+                        HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant)
                         ModuloRow("📲 FCM Push", "Notificaciones push a celulares y TV", pendiente = true)
-                        HorizontalDivider(color = Color(0xFFE0E0E0))
+                        HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant)
                         ModuloRow("📺 Smart TV App", "App de monitoreo en Android TV", pendiente = true)
-                        HorizontalDivider(color = Color(0xFFE0E0E0))
+                        HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant)
                         ModuloRow("⌚ BLE Smartwatch", "Comunicación Bluetooth con watch", pendiente = true)
-                        HorizontalDivider(color = Color(0xFFE0E0E0))
+                        HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant)
                         ModuloRow("🗺️ Mapa Comunitario", "Marcadores de vecinos en mapa", completado = true)
                     }
                 }
@@ -232,7 +232,7 @@ fun AdminPanelScreen(
 private fun StatCard(modifier: Modifier, titulo: String, valor: String, icon: ImageVector, color: Color) {
     Card(
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
         modifier = modifier.shadow(2.dp, RoundedCornerShape(12.dp))
     ) {
         Column(
@@ -267,7 +267,7 @@ private fun MiembroCard(usuario: Usuario) {
     val iniciales = usuario.nombre.trim().split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.first().uppercase() }
     Card(
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth().shadow(1.dp, RoundedCornerShape(12.dp))
     ) {
         Row(
@@ -278,7 +278,7 @@ private fun MiembroCard(usuario: Usuario) {
                 modifier = Modifier.size(44.dp).clip(CircleShape).background(AzulSecundario),
                 contentAlignment = Alignment.Center
             ) {
-                Text(iniciales, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(iniciales, color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -288,7 +288,7 @@ private fun MiembroCard(usuario: Usuario) {
             }
             Box(
                 modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(
-                    if (usuario.estado == "activo") Color(0xFFE8F5E9) else Color(0xFFFFEBEE)
+                    if (usuario.estado == "activo") androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer else androidx.compose.material3.MaterialTheme.colorScheme.errorContainer
                 ).padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(
@@ -315,7 +315,7 @@ private fun ModuloRow(nombre: String, descripcion: String, pendiente: Boolean = 
         Text(
             text = if (completado) "✅ Listo" else "🔧 Próx.",
             fontSize = 11.sp,
-            color = if (completado) VerdeAdmin else Color(0xFFFF9800),
+            color = if (completado) VerdeAdmin else androidx.compose.material3.MaterialTheme.colorScheme.tertiary,
             fontWeight = FontWeight.Bold
         )
     }

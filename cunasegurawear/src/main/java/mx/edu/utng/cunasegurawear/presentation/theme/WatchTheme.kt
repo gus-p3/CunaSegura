@@ -6,20 +6,20 @@ import androidx.wear.compose.material.Colors
 import androidx.wear.compose.material.MaterialTheme
 
 // Mobile app dark theme color tokens mapped to Wear OS palette
-val primaryDark = Color(0xFF85D1E8)
-val onPrimaryDark = Color(0xFF003641)
-val primaryContainerDark = Color(0xFF004E5D)
-val onPrimaryContainerDark = Color(0xFFAFECFF)
-val secondaryDark = Color(0xFFB2CBD3)
-val onSecondaryDark = Color(0xFF1D343A)
-val secondaryContainerDark = Color(0xFF344A51)
-val onSecondaryContainerDark = Color(0xFFCEE7EF)
+val primaryDark = Color(0xFFAAC7FF)
+val onPrimaryDark = Color(0xFF0A305F)
+val primaryContainerDark = Color(0xFF274777)
+val onPrimaryContainerDark = Color(0xFFD6E3FF)
+val secondaryDark = Color(0xFFBEC6DC)
+val onSecondaryDark = Color(0xFF283141)
+val secondaryContainerDark = Color(0xFF3E4759)
+val onSecondaryContainerDark = Color(0xFFDAE2F9)
 val errorDark = Color(0xFFFFB4AB)
 val onErrorDark = Color(0xFF690005)
-val backgroundDark = Color(0xFF0F1416)
-val onBackgroundDark = Color(0xFFDEE3E6)
-val surfaceDark = Color(0xFF0F1416)
-val onSurfaceDark = Color(0xFFDEE3E6)
+val backgroundDark = Color(0xFF111318)
+val onBackgroundDark = Color(0xFFE2E2E9)
+val surfaceDark = Color(0xFF111318)
+val onSurfaceDark = Color(0xFFE2E2E9)
 
 val WatchColorPalette = Colors(
     primary = primaryDark,

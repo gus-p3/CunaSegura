@@ -18,8 +18,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-private val AzulCunaSegura = Color(0xFF1F4E79)
-private val RojoSOS = Color(0xFFD32F2F)
+private val AzulCunaSegura @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
+private val RojoSOS @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.error
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +33,7 @@ fun AdminProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Perfil de Administrador", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Perfil de Administrador", color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AzulCunaSegura)
             )
         }
@@ -41,7 +41,7 @@ fun AdminProfileScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF7F9FC))
+                .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally

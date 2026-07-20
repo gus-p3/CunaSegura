@@ -37,7 +37,9 @@ class LoginViewModel(
     private val context: Context
 ) : ViewModel() {
 
-    private val auth = FirebaseAuth.getInstance()
+    private val auth = FirebaseAuth.getInstance().apply {
+        firebaseAuthSettings.setAppVerificationDisabledForTesting(true)
+    }
     private val db = FirebaseDatabase.getInstance()
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()

@@ -185,7 +185,20 @@ class PhoneWearableService : WearableListenerService() {
                     Log.w(TAG, "No hay permisos de ubicación para SOS")
                 }
 
-                val alertaId = activarAlertaUseCase(usuarioId = 1, latitud = lat, longitud = lon)
+                var usuarioId = 1
+                var nombreUsuario = "Vecino"
+                try {
+                    val dbInstance = mx.edu.utng.cunasegura.data.local.db.AppDatabase.getInstance(applicationContext)
+                    val currentUser = dbInstance.usuarioDao().obtenerUsuarioActual()
+                    if (currentUser != null) {
+                        usuarioId = currentUser.id
+                        nombreUsuario = currentUser.nombre
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error fetching user info", e)
+                }
+
+                val alertaId = activarAlertaUseCase(usuarioId = usuarioId, nombreUsuario = nombreUsuario, latitud = lat, longitud = lon)
                 val intent = Intent(applicationContext, MainActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                     putExtra("EXTRA_ALERTA_ID", alertaId.toInt())
@@ -193,7 +206,43 @@ class PhoneWearableService : WearableListenerService() {
                 applicationContext.startActivity(intent)
             }
             "ALARMA_TV" -> {
-                Log.i(TAG, "TODO: Integración TV pendiente")
+                Log.i(TAG, "Activando Alerta de TV...")
+                showNotification("Alerta Vecinal", "Enviando alerta a las Smart TVs...")
+                
+                var lat = 0.0
+                var lon = 0.0
+                if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    try {
+                        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
+                        val location = fusedLocationClient.lastLocation.await()
+                        if (location != null) {
+                            lat = location.latitude
+                            lon = location.longitude
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error obteniendo ubicación para TV", e)
+                    }
+                }
+
+                // 1. Enviar vía MQTT a las TVs (Rápido / Tiempo Real)
+                mx.edu.utng.cunasegura.mqtt.MqttPublisher.publishAlertaTv(lat, lon)
+                
+                var tvUsuarioId = 1
+                var tvNombreUsuario = "Vecino"
+                try {
+                    val dbInstance = mx.edu.utng.cunasegura.data.local.db.AppDatabase.getInstance(applicationContext)
+                    val currentUser = dbInstance.usuarioDao().obtenerUsuarioActual()
+                    if (currentUser != null) {
+                        tvUsuarioId = currentUser.id
+                        tvNombreUsuario = currentUser.nombre
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error fetching user info for TV alert", e)
+                }
+
+                val alertaId = activarAlertaUseCase(usuarioId = tvUsuarioId, nombreUsuario = tvNombreUsuario, latitud = lat, longitud = lon)
+                Log.i(TAG, "Alerta TV guardada en Firebase con ID: $alertaId")
             }
             "LLAMAR_911" -> {
                 val hasCallPermission = ContextCompat.checkSelfPermission(this, android.Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED

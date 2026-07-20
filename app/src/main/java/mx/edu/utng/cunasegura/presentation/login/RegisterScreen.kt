@@ -88,13 +88,13 @@ fun RegisterScreen(
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Volver",
-                        tint = Color.White
+                        tint = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "Crear Cuenta",
-                    color = Color.White,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -107,7 +107,7 @@ fun RegisterScreen(
                 modifier = Modifier
                     .size(80.dp)
                     .clip(CircleShape)
-                    .background(Color.White),
+                    .background(androidx.compose.material3.MaterialTheme.colorScheme.onPrimary),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -123,7 +123,7 @@ fun RegisterScreen(
             // Card de Registro
             Card(
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -231,7 +231,7 @@ fun RegisterScreen(
                             .height(52.dp)
                     ) {
                         if (uiState.isLoading) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                            CircularProgressIndicator(color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
                         } else {
                             Text(text = "Registrarse", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         }

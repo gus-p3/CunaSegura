@@ -89,14 +89,14 @@ fun LoginScreen(
                 modifier = Modifier
                     .size(110.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.15f)),
+                    .background(androidx.compose.material3.MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
                     modifier = Modifier
                         .size(90.dp)
                         .clip(CircleShape)
-                        .background(Color.White),
+                        .background(androidx.compose.material3.MaterialTheme.colorScheme.onPrimary),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -112,20 +112,20 @@ fun LoginScreen(
 
             Text(
                 text = "CUNA SEGURA",
-                color = Color.White,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 3.sp
             )
             Text(
                 text = "ALERTA CIUDADANA",
-                color = Color.White.copy(alpha = 0.85f),
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                 fontSize = 13.sp,
                 letterSpacing = 2.sp
             )
             Text(
                 text = "DOLORES HIDALGO",
-                color = Color.White.copy(alpha = 0.7f),
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
                 fontSize = 12.sp,
                 letterSpacing = 1.5.sp
             )
@@ -135,7 +135,7 @@ fun LoginScreen(
             // ── Card de Login ──────────────────────────────────────────────
             Card(
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -222,7 +222,7 @@ fun LoginScreen(
                     ) {
                         if (uiState.isLoading) {
                             CircularProgressIndicator(
-                                color = Color.White,
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(22.dp),
                                 strokeWidth = 2.dp
                             )

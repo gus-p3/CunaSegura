@@ -24,9 +24,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-private val FondoRosa = Color(0xFFFFCDD2)
-private val RojoSOS = Color(0xFFD32F2F)
-private val AzulCunaSegura = Color(0xFF1F4E79)
+private val FondoRosa @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.errorContainer
+private val RojoSOS @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.error
+private val AzulCunaSegura @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -122,13 +122,13 @@ fun EmergencyActiveScreen(
                         Icon(
                             imageVector = Icons.Default.Notifications,
                             contentDescription = "Alerta activa",
-                            tint = Color.White,
+                            tint = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(54.dp)
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "SOS",
-                            color = Color.White,
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                             fontSize = 36.sp,
                             fontWeight = FontWeight.Black
                         )
@@ -142,7 +142,7 @@ fun EmergencyActiveScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.85f)),
+                    colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)),
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -220,12 +220,12 @@ fun EmergencyActiveScreen(
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Cancelar ahora",
-                                tint = Color.White
+                                tint = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Cancelar ahora",
-                                color = Color.White,
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -242,7 +242,7 @@ fun EmergencyActiveScreen(
                     ) {
                         Text(
                             text = "ALERTA CONFIRMADA\nAyuda en camino",
-                            color = Color.White,
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.ExtraBold,
                             textAlign = TextAlign.Center,

@@ -21,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val AzulCunaSegura = Color(0xFF1F4E79)
+private val AzulCunaSegura @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +34,7 @@ fun AdminConfigScreen() {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Configuración de la Red", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Configuración de la Red", color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AzulCunaSegura)
             )
         }
@@ -42,7 +42,7 @@ fun AdminConfigScreen() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF7F9FC))
+                .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
@@ -52,7 +52,7 @@ fun AdminConfigScreen() {
             
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                 modifier = Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(16.dp))
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -80,7 +80,7 @@ fun AdminConfigScreen() {
                         }
                     }
 
-                    HorizontalDivider(color = Color(0xFFE0E0E0))
+                    HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant)
 
                     // Radio Máximo
                     Column {
@@ -108,7 +108,7 @@ fun AdminConfigScreen() {
                         )
                     }
 
-                    HorizontalDivider(color = Color(0xFFE0E0E0))
+                    HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant)
 
                     // Tiempo Anti Falsas Alarmas
                     Column {
@@ -137,7 +137,7 @@ fun AdminConfigScreen() {
                         )
                     }
                     
-                    HorizontalDivider(color = Color(0xFFE0E0E0))
+                    HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant)
 
                     // Check de vida
                     Column {
@@ -178,7 +178,7 @@ fun AdminConfigScreen() {
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = AzulCunaSegura)
             ) {
-                Text("Guardar Cambios", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("Guardar Cambios", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary)
             }
         }
     }

@@ -23,7 +23,8 @@ class UsuarioRepositoryImpl : IUsuarioRepository {
             "correo" to usuario.correo,
             "rol" to usuario.rol,
             "estado" to usuario.estado,
-            "tvVinculada" to usuario.tvVinculada
+            "tvVinculada" to usuario.tvVinculada,
+            "networkId" to firebaseUser.uid
         )
         db.getReference("usuarios").child(firebaseUser.uid).updateChildren(map).await()
     }

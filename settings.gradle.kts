@@ -25,3 +25,4 @@ dependencyResolutionManagement {
 rootProject.name = "CunaSegura"
 include(":app")
 include(":cunasegurawear")
+include(":cunaseguratv")
