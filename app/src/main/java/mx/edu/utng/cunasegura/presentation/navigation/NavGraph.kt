@@ -127,5 +127,11 @@ fun NavGraph(
                 onBack = { navController.popBackStack() }
             )
         }
+
+        composable(Screen.Networks.route) {
+            mx.edu.utng.cunasegura.presentation.networks.NetworksScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
     }
 }

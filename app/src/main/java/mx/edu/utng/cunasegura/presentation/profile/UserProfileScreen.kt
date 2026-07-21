@@ -34,7 +34,8 @@ private val RojoSOS @androidx.compose.runtime.Composable get() = androidx.compos
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserProfileScreen(
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigateToNetworks: () -> Unit
 ) {
     val context = LocalContext.current
     var usuario by remember { mutableStateOf<Usuario?>(null) }
@@ -183,6 +184,30 @@ fun UserProfileScreen(
                             )
                         }
                     }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Card(
+                onClick = onNavigateToNetworks,
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(2.dp, RoundedCornerShape(16.dp))
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Shield, contentDescription = null, tint = AzulCunaSegura, modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Red Vecinal", fontWeight = FontWeight.Bold, color = AzulCunaSegura, fontSize = 14.sp)
+                        Text("Configurar, buscar o escanear QR", fontSize = 12.sp, color = Color.Gray)
+                    }
+                    Text("Configurar", fontSize = 12.sp, color = AzulCunaSegura, fontWeight = FontWeight.Bold)
                 }
             }
 

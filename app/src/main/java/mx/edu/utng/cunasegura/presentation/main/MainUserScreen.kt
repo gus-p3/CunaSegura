@@ -168,6 +168,9 @@ fun MainUserScreen(
                         rootNavController.navigate(Screen.Login.route) {
                             popUpTo(Screen.Home.route) { inclusive = true }
                         }
+                    },
+                    onNavigateToNetworks = {
+                        rootNavController.navigate(Screen.Networks.route)
                     }
                 )
             }

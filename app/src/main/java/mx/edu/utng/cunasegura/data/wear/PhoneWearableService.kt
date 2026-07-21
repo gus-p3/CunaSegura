@@ -128,6 +128,26 @@ class PhoneWearableService : WearableListenerService() {
             }
         }
         
+        // Obtener ubicación actual para bitácora de alertas_log
+        var currentLat = 0.0
+        var currentLon = 0.0
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            try {
+                val fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
+                val loc = fusedLocationClient.lastLocation.await()
+                if (loc != null) {
+                    currentLat = loc.latitude
+                    currentLon = loc.longitude
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error obteniendo ubicación para bitácora", e)
+            }
+        }
+        
+        // Guardar en alerts_log
+        logAlertToFirebase(action, currentLat, currentLon)
+        
         when (action) {
             "MENSAJE_SMS" -> {
                 if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
@@ -279,6 +299,56 @@ class PhoneWearableService : WearableListenerService() {
                     tipoAccion = accion
                 )
             )
+        }
+    }
+
+    private suspend fun logAlertToFirebase(action: String, lat: Double, lon: Double) {
+        try {
+            val firebaseUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+            val uid = firebaseUser?.uid ?: "unknown_uid"
+            val nombreUsuario = firebaseUser?.displayName ?: "Vecino"
+            
+            // Mapeo del nivel (1 a 4 toques)
+            val nivel = when (action) {
+                "MENSAJE_SMS" -> 1
+                "UBICACION_TIEMPO_REAL" -> 2
+                "ALARMA_TV" -> 3
+                "LLAMAR_911" -> 4
+                else -> 1
+            }
+
+            // Obtener el networkId del usuario
+            var networkId = uid
+            try {
+                val userSnap = com.google.firebase.database.FirebaseDatabase.getInstance()
+                    .getReference("usuarios").child(uid).get().await()
+                if (userSnap.exists()) {
+                    networkId = userSnap.child("networkId").getValue(String::class.java) ?: uid
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error al obtener networkId del usuario", e)
+            }
+
+            val database = com.google.firebase.database.FirebaseDatabase.getInstance()
+            val ref = database.getReference("alerts_log").push()
+            val alertId = ref.key ?: System.currentTimeMillis().toString()
+
+            val alertData = mapOf(
+                "id" to alertId,
+                "usuarioId" to uid,
+                "nombreUsuario" to nombreUsuario,
+                "latitud" to lat,
+                "longitud" to lon,
+                "tipo" to "Real",
+                "timestamp" to System.currentTimeMillis(),
+                "nivel" to nivel,
+                "networkId" to networkId
+            )
+            
+            ref.setValue(alertData).await()
+            Log.i(TAG, "Alerta registrada en alerts_log: $alertId")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error registrando alerta en alerts_log de Firebase", e)
         }
     }
 }

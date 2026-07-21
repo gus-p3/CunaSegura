@@ -67,6 +67,12 @@ class MainActivity : ComponentActivity() {
             permisos.add(Manifest.permission.SEND_SMS)
         }
 
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permisos.add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+
         if (permisos.isNotEmpty()) {
             ActivityCompat.requestPermissions(this, permisos.toTypedArray(), 101)
         }
