@@ -17,4 +17,5 @@ sealed class Screen(val route: String) {
     object CommunityMap : Screen("community_map")
     object AdminPanel : Screen("admin_panel")
     object Register : Screen("register")
+    object Networks : Screen("networks")
 }

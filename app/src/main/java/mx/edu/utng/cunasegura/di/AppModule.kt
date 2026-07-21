@@ -70,4 +70,7 @@ object AppModule {
 
     fun provideValidarLoginUseCase(context: Context) =
         mx.edu.utng.cunasegura.domain.usecase.ValidarLoginUseCase(provideUsuarioRepository(context))
+
+    fun provideNetworkRepository(context: Context): mx.edu.utng.cunasegura.domain.repository.INetworkRepository =
+        mx.edu.utng.cunasegura.data.repository.NetworkRepositoryImpl()
 }
