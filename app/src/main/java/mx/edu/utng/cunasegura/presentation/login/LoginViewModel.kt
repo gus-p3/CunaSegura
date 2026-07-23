@@ -87,7 +87,7 @@ class LoginViewModel(
                     val rolDb = snapshot.child("rol").getValue(String::class.java) ?: "usuario"
                     
                     val ADMIN_EMAIL = "admin@cunasegura.com"
-                    val esAdmin = (rolDb == "admin") || (firebaseUser.email == ADMIN_EMAIL)
+                    val esAdmin = (rolDb == "admin") || (rolDb == "administrador") || (firebaseUser.email == ADMIN_EMAIL)
                     val rolFinal = if (esAdmin) "admin" else "usuario"
 
                     // Clear previous session so Room LIMIT 1 works correctly for this new user

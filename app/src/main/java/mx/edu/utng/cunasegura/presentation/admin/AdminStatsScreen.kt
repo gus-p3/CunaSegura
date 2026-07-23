@@ -88,11 +88,7 @@ fun AdminStatsScreen() {
     val chartEntryModel = remember(dayStats) {
         val entriesReal = dayStats.mapIndexed { index, stat -> entryOf(index, stat.realAlarms) }
         val entriesFalse = dayStats.mapIndexed { index, stat -> entryOf(index, stat.falseAlarms) }
-        if (entriesReal.isNotEmpty() || entriesFalse.isNotEmpty()) {
-            entryModelOf(entriesReal, entriesFalse)
-        } else {
-            entryModelOf(emptyList<entryOf>())
-        }
+        entryModelOf(entriesReal, entriesFalse)
     }
 
     // 3. Aggregate metrics for the summary card
