@@ -108,11 +108,22 @@ fun HomeScreen(
     var isPressed by remember { mutableStateOf(false) }
     var pressProgress by remember { mutableFloatStateOf(0f) }
 
+    val errorAlerta by viewModel.errorAlerta.collectAsState()
+
     // Listen for alert creation to navigate
     LaunchedEffect(alertaCreada, alertaId) {
         if (alertaCreada && alertaId != null) {
             onNavigateToEmergency(alertaId!!)
             viewModel.resetAlertaState()
+        }
+    }
+
+    LaunchedEffect(errorAlerta) {
+        errorAlerta?.let {
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar(it)
+                viewModel.clearErrorAlerta()
+            }
         }
     }
 

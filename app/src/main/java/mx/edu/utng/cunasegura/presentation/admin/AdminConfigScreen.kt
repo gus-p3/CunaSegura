@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Security
@@ -16,22 +17,56 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 
 private val AzulCunaSegura @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminConfigScreen() {
+    val context = LocalContext.current
+    val viewModel: AdminViewModel = viewModel(factory = AdminViewModelFactory(context))
+
+    val network by viewModel.network.collectAsState()
+    val statusMessage by viewModel.statusMessage.collectAsState()
+
     var radioMaximo by remember { mutableFloatStateOf(200f) }
     var tipoRed by remember { mutableStateOf("Abierta (GPS)") }
     var tiempoAntiFalsa by remember { mutableFloatStateOf(5f) }
     var checkVida by remember { mutableFloatStateOf(2f) }
+    var esperarDiasNuevos by remember { mutableFloatStateOf(0f) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    // Sync state with loaded network
+    LaunchedEffect(network) {
+        network?.let {
+            radioMaximo = it.radio.toFloat()
+            tipoRed = if (it.tipo == "Abierta") "Abierta (GPS)" else "Cerrada (Solo QR)"
+            tiempoAntiFalsa = it.tiempoAntiFalsa.toFloat()
+            checkVida = it.checkVida.toFloat()
+            esperarDiasNuevos = it.esperarDiasNuevos.toFloat()
+        }
+    }
+
+    // Show status messages in Snackbar
+    LaunchedEffect(statusMessage) {
+        statusMessage?.let {
+            scope.launch {
+                snackbarHostState.showSnackbar(it)
+                viewModel.clearStatusMessage()
+            }
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Configuración de la Red", color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold) },
@@ -48,7 +83,7 @@ fun AdminConfigScreen() {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Ajustes Globales", fontWeight = FontWeight.Bold, color = AzulCunaSegura, fontSize = 15.sp)
+            Text("Ajustes Globales y Políticas", fontWeight = FontWeight.Bold, color = AzulCunaSegura, fontSize = 15.sp)
             
             Card(
                 shape = RoundedCornerShape(16.dp),
@@ -92,7 +127,7 @@ fun AdminConfigScreen() {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.LocationOn, contentDescription = null, tint = AzulCunaSegura, modifier = Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Radio Máximo", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                                Text("Radio Máximo de Cobertura", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
                             }
                             Text("${radioMaximo.toInt()} m", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AzulCunaSegura)
                         }
@@ -165,13 +200,56 @@ fun AdminConfigScreen() {
                             )
                         )
                     }
+
+                    HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant)
+
+                    // Esperar días para nuevos (Políticas de Abuso)
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.HourglassEmpty, contentDescription = null, tint = AzulCunaSegura, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Espera para nuevos miembros", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                            }
+                            Text("${esperarDiasNuevos.toInt()} días", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AzulCunaSegura)
+                        }
+                        Slider(
+                            value = esperarDiasNuevos,
+                            onValueChange = { esperarDiasNuevos = it },
+                            valueRange = 0f..7f,
+                            steps = 6,
+                            colors = SliderDefaults.colors(
+                                thumbColor = AzulCunaSegura,
+                                activeTrackColor = AzulCunaSegura,
+                                inactiveTrackColor = AzulCunaSegura.copy(alpha = 0.2f)
+                            )
+                        )
+                        Text(
+                            "Evita el envío inmediato de SOS a usuarios recién incorporados para prevenir el spam y abuso.",
+                            fontSize = 11.sp,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = { /* Save Settings */ },
+                onClick = {
+                    viewModel.guardarRedConfig(
+                        tipo = if (tipoRed == "Abierta (GPS)") "Abierta" else "Cerrada",
+                        radio = radioMaximo.toDouble(),
+                        tiempoAntiFalsa = tiempoAntiFalsa.toDouble(),
+                        checkVida = checkVida.toDouble(),
+                        esperarDiasNuevos = esperarDiasNuevos.toInt()
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),

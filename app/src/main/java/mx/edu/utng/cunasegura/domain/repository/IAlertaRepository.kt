@@ -32,4 +32,9 @@ interface IAlertaRepository {
      * Observa todas las alertas activas de la comunidad en tiempo real.
      */
     fun obtenerAlertasVecinalesActivas(): Flow<List<Alerta>>
+
+    /**
+     * Recupera el historial completo de alertas.
+     */
+    suspend fun obtenerTodasLasAlertas(): List<Alerta>
 }

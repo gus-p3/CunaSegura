@@ -1,0 +1,20 @@
+{
+  "rules": {
+    "networks": {
+      "$networkId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (root.child('usuarios').child(auth.uid).child('rol').val() == 'administrador' || !data.exists())"
+      }
+    },
+    "usuarios": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && (auth.uid == $uid || root.child('usuarios').child(auth.uid).child('rol').val() == 'administrador')"
+      }
+    },
+    "alertas": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
+  }
+}

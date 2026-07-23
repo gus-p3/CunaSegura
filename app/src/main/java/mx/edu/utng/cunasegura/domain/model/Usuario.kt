@@ -16,5 +16,7 @@ data class Usuario(
     val fcmToken: String = "",
     val tvVinculada: Boolean = false,
     val rol: String = "usuario",
-    val estado: String = "activo"
+    val estado: String = "activo",
+    val networkId: String = "",
+    val fechaIngreso: Long = 0L
 )

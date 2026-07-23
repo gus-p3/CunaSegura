@@ -24,7 +24,8 @@ class UsuarioRepositoryImpl : IUsuarioRepository {
             "rol" to usuario.rol,
             "estado" to usuario.estado,
             "tvVinculada" to usuario.tvVinculada,
-            "networkId" to firebaseUser.uid
+            "networkId" to usuario.networkId.ifBlank { firebaseUser.uid },
+            "fechaIngreso" to usuario.fechaIngreso
         )
         db.getReference("usuarios").child(firebaseUser.uid).updateChildren(map).await()
     }
@@ -46,7 +47,9 @@ class UsuarioRepositoryImpl : IUsuarioRepository {
             password = "",
             rol = child.child("rol").getValue(String::class.java) ?: "usuario",
             estado = child.child("estado").getValue(String::class.java) ?: "activo",
-            tvVinculada = child.child("tvVinculada").getValue(Boolean::class.java) ?: false
+            tvVinculada = child.child("tvVinculada").getValue(Boolean::class.java) ?: false,
+            networkId = child.child("networkId").getValue(String::class.java) ?: "",
+            fechaIngreso = child.child("fechaIngreso").getValue(Long::class.java) ?: 0L
         )
     }
 
@@ -71,7 +74,9 @@ class UsuarioRepositoryImpl : IUsuarioRepository {
                 password = "",
                 rol = child.child("rol").getValue(String::class.java) ?: "usuario",
                 estado = child.child("estado").getValue(String::class.java) ?: "activo",
-                tvVinculada = child.child("tvVinculada").getValue(Boolean::class.java) ?: false
+                tvVinculada = child.child("tvVinculada").getValue(Boolean::class.java) ?: false,
+                networkId = child.child("networkId").getValue(String::class.java) ?: "",
+                fechaIngreso = child.child("fechaIngreso").getValue(Long::class.java) ?: 0L
             )
         }
     }
@@ -100,7 +105,9 @@ class UsuarioRepositoryImpl : IUsuarioRepository {
             password = "",
             rol = snapshot.child("rol").getValue(String::class.java) ?: "usuario",
             estado = snapshot.child("estado").getValue(String::class.java) ?: "activo",
-            tvVinculada = snapshot.child("tvVinculada").getValue(Boolean::class.java) ?: false
+            tvVinculada = snapshot.child("tvVinculada").getValue(Boolean::class.java) ?: false,
+            networkId = snapshot.child("networkId").getValue(String::class.java) ?: "",
+            fechaIngreso = snapshot.child("fechaIngreso").getValue(Long::class.java) ?: 0L
         )
     }
 

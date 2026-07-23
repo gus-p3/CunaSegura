@@ -38,11 +38,14 @@ class NetworkRepositoryImpl : INetworkRepository {
                 .setValue(true)
                 .await()
 
-            // 2. Actualizar el networkId en el perfil del usuario
+            // 2. Actualizar el networkId y fechaIngreso en el perfil del usuario
+            val updates = mapOf(
+                "networkId" to networkId,
+                "fechaIngreso" to System.currentTimeMillis()
+            )
             db.getReference("usuarios")
                 .child(usuarioId)
-                .child("networkId")
-                .setValue(networkId)
+                .updateChildren(updates)
                 .await()
             true
         } catch (e: Exception) {
@@ -87,7 +90,9 @@ class NetworkRepositoryImpl : INetworkRepository {
                     password = "",
                     rol = userSnap.child("rol").getValue(String::class.java) ?: "usuario",
                     estado = userSnap.child("estado").getValue(String::class.java) ?: "activo",
-                    tvVinculada = userSnap.child("tvVinculada").getValue(Boolean::class.java) ?: false
+                    tvVinculada = userSnap.child("tvVinculada").getValue(Boolean::class.java) ?: false,
+                    networkId = userSnap.child("networkId").getValue(String::class.java) ?: "",
+                    fechaIngreso = userSnap.child("fechaIngreso").getValue(Long::class.java) ?: 0L
                 )
                 list.add(user)
             }

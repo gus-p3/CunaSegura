@@ -13,6 +13,7 @@ import mx.edu.utng.cunasegura.data.local.entity.AlertaEntity
 import mx.edu.utng.cunasegura.domain.model.Alerta
 import mx.edu.utng.cunasegura.domain.repository.IAlertaRepository
 import android.util.Log
+import kotlinx.coroutines.tasks.await
 
 /**
  * Implementación de [IAlertaRepository] que interactúa con Room a través de [AlertaDao]
@@ -102,6 +103,31 @@ class AlertaRepositoryImpl(
 
         dbRef.addValueEventListener(listener)
         awaitClose { dbRef.removeEventListener(listener) }
+    }
+
+    override suspend fun obtenerTodasLasAlertas(): List<Alerta> {
+        return try {
+            val snapshot = dbRef.get().await()
+            val list = mutableListOf<Alerta>()
+            for (child in snapshot.children) {
+                val alerta = Alerta(
+                    id = child.child("id").getValue(Int::class.java) ?: 0,
+                    usuarioId = child.child("usuarioId").getValue(Int::class.java) ?: 0,
+                    nombreUsuario = child.child("nombreUsuario").getValue(String::class.java) ?: "Vecino",
+                    estado = child.child("estado").getValue(String::class.java) ?: "",
+                    latitud = child.child("latitud").getValue(Double::class.java) ?: 0.0,
+                    longitud = child.child("longitud").getValue(Double::class.java) ?: 0.0,
+                    fueAtendida = child.child("fueAtendida").getValue(Boolean::class.java) ?: false,
+                    esFalsaAlarma = child.child("esFalsaAlarma").getValue(Boolean::class.java) ?: false,
+                    creadoEn = child.child("creadoEn").getValue(Long::class.java) ?: 0L
+                )
+                list.add(alerta)
+            }
+            list
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting all alerts: ${e.message}", e)
+            emptyList()
+        }
     }
 
     // -------------------------------------------------------------------------

@@ -11,6 +11,14 @@ import androidx.room.PrimaryKey
  */
 @Entity(
     tableName = "contactos_emergencia",
+    foreignKeys = [
+        ForeignKey(
+            entity = UsuarioEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["usuarioId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
     indices = [Index("usuarioId")]
 )
 data class ContactoEmergenciaEntity(

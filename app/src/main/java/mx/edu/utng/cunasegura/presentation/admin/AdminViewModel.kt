@@ -8,12 +8,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import mx.edu.utng.cunasegura.di.AppModule
+import mx.edu.utng.cunasegura.domain.model.Alerta
+import mx.edu.utng.cunasegura.domain.model.Network
 import mx.edu.utng.cunasegura.domain.model.Usuario
+import mx.edu.utng.cunasegura.domain.repository.IAlertaRepository
+import mx.edu.utng.cunasegura.domain.repository.INetworkRepository
+import mx.edu.utng.cunasegura.domain.repository.IUsuarioRepository
 
 class AdminViewModel(
-    private val usuarioRepository: mx.edu.utng.cunasegura.domain.repository.IUsuarioRepository,
-    private val alertaRepository: mx.edu.utng.cunasegura.domain.repository.IAlertaRepository
+    private val usuarioRepository: IUsuarioRepository,
+    private val alertaRepository: IAlertaRepository,
+    private val networkRepository: INetworkRepository
 ) : ViewModel() {
 
     private val _usuarios = MutableStateFlow<List<Usuario>>(emptyList())
@@ -25,20 +32,85 @@ class AdminViewModel(
     private val _adminActual = MutableStateFlow<Usuario?>(null)
     val adminActual: StateFlow<Usuario?> = _adminActual.asStateFlow()
 
+    private val _network = MutableStateFlow<Network?>(null)
+    val network: StateFlow<Network?> = _network.asStateFlow()
+
+    private val _alertas = MutableStateFlow<List<Alerta>>(emptyList())
+    val alertas: StateFlow<List<Alerta>> = _alertas.asStateFlow()
+
+    private val _statusMessage = MutableStateFlow<String?>(null)
+    val statusMessage: StateFlow<String?> = _statusMessage.asStateFlow()
+
     init {
         cargarDatos()
     }
 
     private fun cargarDatos() {
         viewModelScope.launch {
-            val todos = usuarioRepository.obtenerTodosLosUsuarios()
-            _usuarios.value = todos
-            _totalUsuarios.value = todos.size
-            _adminActual.value = usuarioRepository.obtenerUsuarioActual()
+            try {
+                val todos = usuarioRepository.obtenerTodosLosUsuarios()
+                _usuarios.value = todos
+                _totalUsuarios.value = todos.size
+                
+                val admin = usuarioRepository.obtenerUsuarioActual()
+                _adminActual.value = admin
+                
+                val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+                if (uid != null) {
+                    val snapshot = com.google.firebase.database.FirebaseDatabase.getInstance()
+                        .getReference("usuarios").child(uid).get().await()
+                    val netId = snapshot.child("networkId").getValue(String::class.java) ?: uid
+                    val net = networkRepository.obtenerNetworkPorId(netId)
+                    _network.value = net
+                }
+
+                // Cargar todas las alertas para estadísticas
+                val todasAlertas = alertaRepository.obtenerTodasLasAlertas()
+                _alertas.value = todasAlertas
+            } catch (e: Exception) {
+                _statusMessage.value = "Error al cargar datos: ${e.message}"
+            }
         }
     }
 
     fun recargar() = cargarDatos()
+
+    fun guardarRedConfig(
+        tipo: String,
+        radio: Double,
+        tiempoAntiFalsa: Double,
+        checkVida: Double,
+        esperarDiasNuevos: Int
+    ) {
+        viewModelScope.launch {
+            try {
+                val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
+                val currentNet = _network.value
+                val updatedNet = Network(
+                    id = currentNet?.id ?: uid,
+                    nombre = currentNet?.nombre ?: "Red Vecinal",
+                    tipo = tipo,
+                    latitud = currentNet?.latitud ?: 0.0,
+                    longitud = currentNet?.longitud ?: 0.0,
+                    radio = radio,
+                    miembros = currentNet?.miembros ?: mapOf(uid to true),
+                    tvId = currentNet?.tvId ?: "",
+                    tiempoAntiFalsa = tiempoAntiFalsa,
+                    checkVida = checkVida,
+                    esperarDiasNuevos = esperarDiasNuevos
+                )
+                networkRepository.crearNetwork(updatedNet)
+                _network.value = updatedNet
+                _statusMessage.value = "¡Configuración de la red guardada con éxito!"
+            } catch (e: Exception) {
+                _statusMessage.value = "Error al guardar configuración: ${e.message}"
+            }
+        }
+    }
+
+    fun clearStatusMessage() {
+        _statusMessage.value = null
+    }
 }
 
 class AdminViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
@@ -47,7 +119,8 @@ class AdminViewModelFactory(private val context: Context) : ViewModelProvider.Fa
             @Suppress("UNCHECKED_CAST")
             return AdminViewModel(
                 AppModule.provideUsuarioRepository(context),
-                AppModule.provideAlertaRepository(context)
+                AppModule.provideAlertaRepository(context),
+                AppModule.provideNetworkRepository(context)
             ) as T
         }
         throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")
