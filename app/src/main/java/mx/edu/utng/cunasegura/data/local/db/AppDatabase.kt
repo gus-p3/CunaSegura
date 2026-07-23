@@ -32,7 +32,7 @@ import mx.edu.utng.cunasegura.data.local.entity.UsuarioEntity
         ContactoEmergenciaEntity::class,
         ConfiguracionToqueEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

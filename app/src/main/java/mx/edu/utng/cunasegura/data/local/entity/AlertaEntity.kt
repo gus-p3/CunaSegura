@@ -11,14 +11,6 @@ import androidx.room.PrimaryKey
  */
 @Entity(
     tableName = "alertas",
-    foreignKeys = [
-        ForeignKey(
-            entity = UsuarioEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["usuarioId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
     indices = [Index("usuarioId")]
 )
 data class AlertaEntity(

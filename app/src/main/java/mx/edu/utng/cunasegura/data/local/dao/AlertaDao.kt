@@ -46,4 +46,10 @@ interface AlertaDao {
      */
     @Query("SELECT * FROM alertas WHERE usuarioId = :usuarioId AND estado = 'activa' ORDER BY creadoEn DESC LIMIT 1")
     fun obtenerAlertaActivaPorUsuario(usuarioId: Int): Flow<AlertaEntity?>
+
+    /**
+     * Busca síncronamente la alerta activa más reciente de un usuario.
+     */
+    @Query("SELECT * FROM alertas WHERE usuarioId = :usuarioId AND estado = 'activa' ORDER BY creadoEn DESC LIMIT 1")
+    suspend fun buscarAlertaActivaPorUsuario(usuarioId: Int): AlertaEntity?
 }

@@ -52,7 +52,19 @@ class LocationTrackerService : Service() {
             .setOngoing(true)
             .build()
 
-        startForeground(1, notification)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(
+                    1,
+                    notification,
+                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+                )
+            } else {
+                startForeground(1, notification)
+            }
+        } catch (e: Exception) {
+            Log.e("LocationTracker", "No se pudo iniciar Foreground Service (posible falta de permisos o restricción API 34): ${e.message}")
+        }
         
         requestLocationUpdates()
 
@@ -156,8 +168,8 @@ class LocationTrackerService : Service() {
                     // - No es el usuario actual
                     // - Es de la misma red vecinal
                     // - Es reciente (menos de 45 segundos)
-                    val isRecent = Math.abs(System.currentTimeMillis() - timestamp) < 45000
-                    val isSameNetwork = currentUserNetworkId != null && alertNetworkId == currentUserNetworkId
+                    val isRecent = Math.abs(System.currentTimeMillis() - timestamp) < 180000 // 3 minutos
+                    val isSameNetwork = currentUserNetworkId.isNullOrEmpty() || alertNetworkId.isEmpty() || alertNetworkId == currentUserNetworkId || alertNetworkId == currentUid || currentUserNetworkId == alertUid
                     val isDifferentUser = alertUid.isNotEmpty() && alertUid != currentUid
 
                     Log.d("LocationTracker", "Alerta detectada: de=$nombreUsuario, network=$alertNetworkId, actualNetwork=$currentUserNetworkId, recent=$isRecent, different=$isDifferentUser")

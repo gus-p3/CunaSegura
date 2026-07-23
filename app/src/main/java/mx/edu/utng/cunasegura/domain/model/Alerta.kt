@@ -12,5 +12,6 @@ data class Alerta(
     val longitud: Double = 0.0,
     val fueAtendida: Boolean = false,
     val esFalsaAlarma: Boolean = false,
-    val creadoEn: Long = System.currentTimeMillis()
+    val creadoEn: Long = System.currentTimeMillis(),
+    val networkId: String = ""
 )

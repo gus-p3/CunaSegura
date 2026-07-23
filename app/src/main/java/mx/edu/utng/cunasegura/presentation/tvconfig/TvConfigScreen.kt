@@ -108,10 +108,21 @@ class TvConfigViewModel(private val context: Context) : ViewModel() {
         viewModelScope.launch {
             val user = _uiState.value.usuario ?: return@launch
             val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
-            val dbRef = FirebaseDatabase.getInstance().getReference("tvs").child(tvId).child("networkId")
-            dbRef.setValue(uid).addOnSuccessListener {
-                FirebaseDatabase.getInstance().getReference("usuarios").child(uid).child("networkId").setValue(uid)
-                mx.edu.utng.cunasegura.mqtt.MqttPublisher.publishTvVinculacion(tvId, uid)
+            
+            // Usar la red vecinal real a la que pertenece el usuario (no sobreescribir su red con su UID)
+            val effectiveNetworkId = user.networkId.ifBlank { uid }
+
+            val dbRef = FirebaseDatabase.getInstance().getReference("tvs").child(tvId)
+            val updates = mapOf(
+                "networkId" to effectiveNetworkId,
+                "linkedBy" to uid
+            )
+            dbRef.updateChildren(updates).addOnSuccessListener {
+                // Solo si el usuario no pertenecía a ninguna red, asignarle su UID como red por defecto
+                if (user.networkId.isBlank()) {
+                    FirebaseDatabase.getInstance().getReference("usuarios").child(uid).child("networkId").setValue(effectiveNetworkId)
+                }
+                mx.edu.utng.cunasegura.mqtt.MqttPublisher.publishTvVinculacion(tvId, effectiveNetworkId)
                 onToggleTvVinculada(true)
             }.addOnFailureListener {
                 _uiState.value = _uiState.value.copy(infoMessage = "Error al enlazar Smart TV")

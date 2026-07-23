@@ -86,8 +86,9 @@ dependencies {
     // ZXing for QR Code generation
     implementation("com.google.zxing:core:3.5.3")
 
-    // OSMDroid for map
+    // OSMDroid for map (OpenStreetMap para Android)
     implementation("org.osmdroid:osmdroid-android:6.1.18")
+    implementation("androidx.preference:preference-ktx:1.2.1")
 
     // Firebase
     implementation(platform(libs.firebase.bom))

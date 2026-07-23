@@ -112,7 +112,7 @@ class PhoneWearableService : WearableListenerService() {
     private suspend fun handleSosTrigger(payload: String) {
         // Payload format: "ACTION=ALARMA_TV|ADDRESS=Ubicación actual"
         Log.d(TAG, "Trigger SOS con payload: $payload")
-        showNotification("Señal SOS recibida", "Procesando alerta desde el reloj...")
+        showNotification("Tu Señal SOS fue recibida", "Procesando la alerta desde tu reloj...")
         
         val activarAlertaUseCase = AppModule.provideActivarAlertaUseCase(applicationContext)
         val obtenerContactosUseCase = AppModule.provideObtenerContactosUseCase(applicationContext)
@@ -227,7 +227,7 @@ class PhoneWearableService : WearableListenerService() {
             }
             "ALARMA_TV" -> {
                 Log.i(TAG, "Activando Alerta de TV...")
-                showNotification("Alerta Vecinal", "Enviando alerta a las Smart TVs...")
+                showNotification("Tu Alerta SOS ha sido enviada", "Transmitiendo la alarma a las Smart TVs...")
                 
                 var lat = 0.0
                 var lon = 0.0
@@ -245,9 +245,6 @@ class PhoneWearableService : WearableListenerService() {
                     }
                 }
 
-                // 1. Enviar vía MQTT a las TVs (Rápido / Tiempo Real)
-                mx.edu.utng.cunasegura.mqtt.MqttPublisher.publishAlertaTv(lat, lon)
-                
                 var tvUsuarioId = 1
                 var tvNombreUsuario = "Vecino"
                 try {
@@ -262,7 +259,7 @@ class PhoneWearableService : WearableListenerService() {
                 }
 
                 val alertaId = activarAlertaUseCase(usuarioId = tvUsuarioId, nombreUsuario = tvNombreUsuario, latitud = lat, longitud = lon)
-                Log.i(TAG, "Alerta TV guardada en Firebase con ID: $alertaId")
+                Log.i(TAG, "Alerta TV guardada y transmitida con ID: $alertaId")
             }
             "LLAMAR_911" -> {
                 val hasCallPermission = ContextCompat.checkSelfPermission(this, android.Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED
@@ -279,8 +276,25 @@ class PhoneWearableService : WearableListenerService() {
     }
 
     private suspend fun handleSosCancel() {
-        val cancelarAlertaUseCase = AppModule.provideCancelarAlertaUseCase(applicationContext)
-        cancelarAlertaUseCase(alertaId = 1)
+        try {
+            val dbInstance = mx.edu.utng.cunasegura.data.local.db.AppDatabase.getInstance(applicationContext)
+            val currentUser = dbInstance.usuarioDao().obtenerUsuarioActual()
+            val userId = currentUser?.id ?: 1
+            
+            val alertaDao = dbInstance.alertaDao()
+            val alertaActiva = alertaDao.buscarAlertaActivaPorUsuario(userId)
+            
+            val cancelarAlertaUseCase = AppModule.provideCancelarAlertaUseCase(applicationContext)
+            if (alertaActiva != null) {
+                cancelarAlertaUseCase(alertaId = alertaActiva.id)
+                Log.i(TAG, "Alerta cancelada exitosamente para el usuario con ID: ${alertaActiva.id}")
+            } else {
+                cancelarAlertaUseCase(alertaId = 1)
+            }
+            showNotification("Alerta Cancelada", "Has marcado que te encuentras a salvo.")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error procesando cancelación SOS desde Wear OS", e)
+        }
     }
 
     private suspend fun handleConfigUpdate(payload: String) {

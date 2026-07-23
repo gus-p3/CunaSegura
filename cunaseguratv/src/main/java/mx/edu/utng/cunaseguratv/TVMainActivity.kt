@@ -34,7 +34,10 @@ class TVMainActivity : ComponentActivity() {
                     } else {
                         DashboardScreen(
                             state = state,
-                            onSilenciar = { viewModel.silenciarAlarma() }
+                            onSilenciar = { viewModel.silenciarAlarma() },
+                            onCerrarSesion = { viewModel.cerrarSesion() },
+                            onToggleColorPicker = { viewModel.toggleColorPicker() },
+                            onGuardarColores = { u, v, a -> viewModel.guardarColores(u, v, a) }
                         )
                     }
                     

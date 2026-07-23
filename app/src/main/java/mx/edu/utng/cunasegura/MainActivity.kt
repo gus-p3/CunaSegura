@@ -34,8 +34,12 @@ class MainActivity : ComponentActivity() {
         }
 
         // Start location tracking service
-        val serviceIntent = Intent(this, mx.edu.utng.cunasegura.data.location.LocationTrackerService::class.java)
-        ContextCompat.startForegroundService(this, serviceIntent)
+        try {
+            val serviceIntent = Intent(this, mx.edu.utng.cunasegura.data.location.LocationTrackerService::class.java)
+            ContextCompat.startForegroundService(this, serviceIntent)
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error al iniciar LocationTrackerService: ${e.message}")
+        }
 
         setContent {
             CunaSeguraTheme {
@@ -59,6 +63,14 @@ class MainActivity : ComponentActivity() {
     private fun solicitarPermisosEmergencia() {
         val permisos = mutableListOf<String>()
         
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            permisos.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            permisos.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
             permisos.add(Manifest.permission.CALL_PHONE)
         }

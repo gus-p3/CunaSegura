@@ -52,8 +52,8 @@ class MqttTvSubscriber(
                         } else if (topic == MqttConfig.TOPIC_ALERTAS) {
                             val alertaMsg = Json.decodeFromString<AlertaMqttMessage>(payloadStr)
                             
-                            // Filtrar si pertenece a la misma red vecinal (si hay una configurada)
-                            if (networkId.isEmpty() || alertaMsg.networkId == networkId || alertaMsg.networkId.isEmpty()) {
+                            // Filtrar: la TV debe estar vinculada (networkId no vacío) y la alerta debe pertenecer a su misma red vecinal
+                            if (networkId.isNotEmpty() && (alertaMsg.networkId == networkId || alertaMsg.networkId.isEmpty())) {
                                 if (alertaMsg.estado == "activa") {
                                     alertFlow.value = alertaMsg
                                 } else if (alertaMsg.estado == "cancelada") {

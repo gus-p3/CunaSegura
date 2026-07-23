@@ -83,9 +83,16 @@ class NetworksViewModel(context: Context) : ViewModel() {
             try {
                 val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
                 
-                // Establecer el rol del creador a "administrador"
-                com.google.firebase.database.FirebaseDatabase.getInstance()
-                    .getReference("usuarios").child(uid).child("rol").setValue("administrador").await()
+                // Establecer el rol en la red vecinal como "admin" (sin sobreescribir el rol global del sistema)
+                val userRef = com.google.firebase.database.FirebaseDatabase.getInstance()
+                    .getReference("usuarios").child(uid)
+                userRef.child("rolEnRed").setValue("admin").await()
+                
+                // Si anteriormente se sobreescribió como "administrador", restablecerlo a "usuario"
+                val rolActual = userRef.child("rol").get().await().getValue(String::class.java)
+                if (rolActual == "administrador" || rolActual == "admin") {
+                    userRef.child("rol").setValue("usuario").await()
+                }
                 
                 val nuevaRed = Network(
                     id = uid,

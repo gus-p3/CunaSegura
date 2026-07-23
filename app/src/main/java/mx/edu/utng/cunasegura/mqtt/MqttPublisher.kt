@@ -33,7 +33,15 @@ object MqttPublisher {
     private const val TAG = "MQTT_PUBLISHER"
     private const val TOPIC_ALERTAS = "cunasegura/alertas"
 
-    fun publishAlertaTv(lat: Double, lon: Double) {
+    fun publishAlertaTv(
+        usuarioId: Int = 1,
+        nombreUsuario: String = "Vecino",
+        lat: Double,
+        lon: Double,
+        networkId: String = "",
+        estado: String = "activa",
+        nivelAlerta: Int = 3
+    ) {
         try {
             val clientId = "cunasegura-phone-${UUID.randomUUID().toString().substring(0, 8)}"
             val client = MqttAsyncClient(
@@ -52,24 +60,24 @@ object MqttPublisher {
 
             client.connect(options, null, object : IMqttActionListener {
                 override fun onSuccess(token: IMqttToken?) {
-                    Log.d(TAG, "✅ Conectado a MQTT. Publicando alerta...")
+                    Log.d(TAG, "✅ Conectado a MQTT. Publicando alerta ($estado)...")
                     
                     val mensaje = AlertaMqttMessage(
-                        usuarioId = 1, // ID del usuario actual
-                        nombreUsuario = "Vecino (Hub Central)",
+                        usuarioId = usuarioId,
+                        nombreUsuario = nombreUsuario,
                         latitud = lat,
                         longitud = lon,
-                        nivelAlerta = 3,
-                        estado = "activa"
+                        nivelAlerta = nivelAlerta,
+                        estado = estado,
+                        networkId = networkId
                     )
                     
                     val payload = Json.encodeToString(AlertaMqttMessage.serializer(), mensaje).toByteArray()
                     
                     try {
                         client.publish(TOPIC_ALERTAS, payload, 1, false)
-                        Log.d(TAG, "🚨 Alerta TV publicada exitosamente en MQTT")
+                        Log.d(TAG, "🚨 Alerta TV publicada exitosamente en MQTT (estado: $estado, net: $networkId)")
                         
-                        // Desconectar después de publicar para no mantener la conexión abierta innecesariamente
                         client.disconnect()
                     } catch (e: Exception) {
                         Log.e(TAG, "Error al publicar mensaje MQTT", e)

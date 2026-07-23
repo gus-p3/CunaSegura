@@ -1,6 +1,7 @@
 package mx.edu.utng.cunasegura.presentation.login
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -85,9 +86,10 @@ class LoginViewModel(
                     val nombre = snapshot.child("nombre").getValue(String::class.java) ?: firebaseUser.displayName ?: correo.substringBefore("@")
                     val telefono = snapshot.child("telefono").getValue(String::class.java) ?: ""
                     val rolDb = snapshot.child("rol").getValue(String::class.java) ?: "usuario"
+                    val netId = snapshot.child("networkId").getValue(String::class.java) ?: ""
                     
                     val ADMIN_EMAIL = "admin@cunasegura.com"
-                    val esAdmin = (rolDb == "admin") || (rolDb == "administrador") || (firebaseUser.email == ADMIN_EMAIL)
+                    val esAdmin = (rolDb == "admin_global") || (rolDb == "system_admin") || (firebaseUser.email == ADMIN_EMAIL)
                     val rolFinal = if (esAdmin) "admin" else "usuario"
 
                     // Clear previous session so Room LIMIT 1 works correctly for this new user
@@ -100,7 +102,8 @@ class LoginViewModel(
                         telefono = telefono,
                         correo = correo,
                         password = "",
-                        rol = rolFinal
+                        rol = rolFinal,
+                        networkId = netId
                     )
                     guardarUsuarioUseCase(usuario)
 
@@ -111,6 +114,28 @@ class LoginViewModel(
                     }
                 }
             } catch (e: FirebaseAuthInvalidUserException) {
+                if (correo == "admin@cunasegura.com") {
+                    try {
+                        val createResult = auth.createUserWithEmailAndPassword("admin@cunasegura.com", "123456789").await()
+                        val newUser = createResult.user
+                        if (newUser != null) {
+                            val adminMap = mapOf(
+                                "nombre" to "Administrador Global",
+                                "correo" to "admin@cunasegura.com",
+                                "telefono" to "0000000000",
+                                "rol" to "admin_global",
+                                "estado" to "activo"
+                            )
+                            db.getReference("usuarios").child(newUser.uid).setValue(adminMap).await()
+                            limpiarSesionLocalUseCase()
+                            guardarUsuarioUseCase(Usuario(id = 0, nombre = "Administrador Global", telefono = "0000000000", correo = "admin@cunasegura.com", password = "", rol = "admin"))
+                            _uiState.value = _uiState.value.copy(isLoading = false, navigateToAdmin = true)
+                            return@launch
+                        }
+                    } catch (ex: Exception) {
+                        Log.e("LoginViewModel", "Error auto-creando admin", ex)
+                    }
+                }
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     errorMessage = "No existe una cuenta con ese correo. ¿Quieres registrarte?"
