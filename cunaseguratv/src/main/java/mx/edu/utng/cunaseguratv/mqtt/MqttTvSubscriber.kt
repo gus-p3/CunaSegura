@@ -34,8 +34,16 @@ class MqttTvSubscriber(
         if (client?.isConnected == true) return
 
         try {
+            val rawUrl = MqttConfig.BROKER_URL
+            val brokerUrl = if (rawUrl.isNullOrBlank() || rawUrl == "null") {
+                "tcp://broker.hivemq.com:1883"
+            } else {
+                rawUrl
+            }
+            val isPublicBroker = brokerUrl.startsWith("tcp://broker.hivemq.com")
+
             client = MqttAsyncClient(
-                MqttConfig.BROKER_URL,
+                brokerUrl,
                 clientId,
                 MemoryPersistence()
             )
@@ -77,16 +85,18 @@ class MqttTvSubscriber(
             })
 
             val options = MqttConnectOptions().apply {
-                userName = MqttConfig.USERNAME
-                password = MqttConfig.PASSWORD.toCharArray()
+                if (!isPublicBroker) {
+                    userName = MqttConfig.USERNAME
+                    password = MqttConfig.PASSWORD.toCharArray()
+                    socketFactory = javax.net.ssl.SSLSocketFactory.getDefault()
+                }
                 isCleanSession = true
-                socketFactory = javax.net.ssl.SSLSocketFactory.getDefault()
                 connectionTimeout = 10
                 keepAliveInterval = 20
                 isAutomaticReconnect = true
             }
 
-            Log.d(TAG, "Conectando al broker MQTT: ${MqttConfig.BROKER_URL} ...")
+            Log.d(TAG, "Conectando al broker MQTT: $brokerUrl ...")
             client?.connect(options, null, object : IMqttActionListener {
                 override fun onSuccess(token: IMqttToken?) {
                     isConnected.value = true
