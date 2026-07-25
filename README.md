@@ -6,6 +6,19 @@
 
 ---
 
+## 🚀 Documentación por Ecosistema
+
+Explora la documentación detallada de cada módulo, con capturas de pantalla, explicaciones arquitectónicas y guías de uso paso a paso:
+
+| 📱 Módulo Móvil | 📺 Módulo Smart TV | ⌚ Módulo Wear OS |
+| :---: | :---: | :---: |
+| [**Manual de Smartphone**](docs/SMARTPHONE.md) | [**Manual de Smart TV**](docs/TV.md) | [**Manual de Reloj Inteligente**](docs/WEAROS.md) |
+| *El centro de operaciones y configuración del sistema.* | *La estación de monitoreo y despliegue del hogar.* | *El disparador físico y sensor táctico.* |
+
+> 👉 **[📸 Acceder a la Galería Interactiva de Capturas (Wear OS)](docs/CAPTURAS_WEAROS.md)**
+
+---
+
 ## 📑 Índice General
 
 1. [Resumen Ejecutivo y Motivación](#1-resumen-ejecutivo-y-motivación)
@@ -554,14 +567,7 @@ Para instalar el APK en un dispositivo físico con adb habilitado o en un emulad
 
 ## 12. Anexos (Documentación Externa y Visual)
 
-Dado lo extensivo de la interfaz gráfica y de las directrices visuales adoptadas, proveemos documentos complementarios aislados por plataforma, en los cuales se aprecian con detalle las pantallas, modales, iconos, flujos y la galería fotográfica de Wear OS:
-
-👉 **[📸 Acceder a la Galería Interactiva de Capturas (Wear OS)](docs/CAPTURAS_WEAROS.md)**
-
-Para documentación individual segregada por ecosistema, consulta:
-* 📱 **[Repositorio Documental del Módulo Móvil (`app`)](docs/MOBILE.md)**
-* 📺 **[Repositorio Documental del Módulo Smart TV (`cunaseguratv`)](docs/TV.md)**
-* ⌚ **[Repositorio Documental del Módulo Wear OS (`cunasegurawear`)](docs/WEAROS.md)**
+Dado lo extensivo de la interfaz gráfica y de las directrices visuales adoptadas, proveemos documentos complementarios aislados por plataforma listados al inicio de este documento.
 
 ---
 > 💡 *Para cualquier duda técnica con el despliegue, la configuración o la extensión del código fuente, por favor dirígete a los desarrolladores a través de Pull Requests en el repositorio.*

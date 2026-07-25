@@ -15,14 +15,14 @@ La pantalla de inicio de sesión permite a los usuarios acceder a su cuenta. Uti
 - **Campos**: Correo Electrónico, Contraseña (con botón para mostrar/ocultar).
 - **Validaciones**: Se verifica el formato de correo y longitud mínima de contraseña.
 - **Imagen de Referencia**:
-  ![Login](../evidencias/smarthphone/01_login.png)
+  <img src="../evidencias/smarthphone/01_login.png" width="250" alt="Login" />
 
 ### 2.2. Registro de Usuario (Sign Up)
 Para nuevos usuarios, la pantalla de registro solicita los datos necesarios para integrarse a la comunidad.
 - **Campos**: Nombre Completo, Teléfono a 10 dígitos (usado para contactos de emergencia), Correo, Contraseña, y Confirmar Contraseña.
 - Al registrarse, el usuario automáticamente recibe un perfil básico de tipo "Vecino" en la base de datos (Room y Firebase).
 - **Imagen de Referencia**:
-  ![Registro](../evidencias/smarthphone/02_register.png)
+  <img src="../evidencias/smarthphone/02_register.png" width="250" alt="Registro" />
 
 ---
 
@@ -39,7 +39,7 @@ Esta es la pantalla principal o de inicio, diseñada para acciones de respuesta 
   - **Bomberos**: Llama directamente al departamento de bomberos local.
   - **Mi Ubicación**: Centra el mapa en la ubicación GPS exacta actual del usuario.
 - **Imagen de Referencia**:
-  ![Dashboard Principal](../evidencias/smarthphone/user/01_dashboard.png)
+  <img src="../evidencias/smarthphone/user/01_dashboard.png" width="250" alt="Dashboard Principal" />
 
 ### 3.2. Mapa Comunitario
 Una de las funcionalidades más potentes es el seguimiento de incidencias y de miembros en tiempo real a través de Google Maps.
@@ -49,9 +49,9 @@ Una de las funcionalidades más potentes es el seguimiento de incidencias y de m
 - Cuenta con un panel inferior que resume el estado ("Todo está en calma" o listado de emergencias).
 - **Imágenes de Referencia**:
   - Mi Ubicación:
-    ![Mapa Yo](../evidencias/smarthphone/user/04_mapa_yo.png)
+    <img src="../evidencias/smarthphone/user/04_mapa_yo.png" width="250" alt="Mapa Yo" />
   - Ubicación de un Vecino:
-    ![Mapa Vecino](../evidencias/smarthphone/user/05_mapa_vecino.png)
+    <img src="../evidencias/smarthphone/user/05_mapa_vecino.png" width="250" alt="Mapa Vecino" />
 
 ### 3.3. Red Vecinal (Modo Usuario)
 El usuario puede ver a qué red pertenece y el código QR de invitación si la red es abierta.
@@ -59,21 +59,21 @@ El usuario puede ver a qué red pertenece y el código QR de invitación si la r
 - Lista de miembros actualmente conectados.
 - Identificador personal.
 - **Imagen de Referencia**:
-  ![Red Vecinal Usuario](../evidencias/smarthphone/user/02_red_vecinal_qr.png)
+  <img src="../evidencias/smarthphone/user/02_red_vecinal_qr.png" width="250" alt="Red Vecinal Usuario" />
 
 ### 3.4. Contactos de Confianza
 Sección vital donde el usuario registra a familiares o personas cercanas que serán notificadas por SMS o llamada en caso de activar una alarma SOS.
 - Permite añadir, editar y eliminar (mediante un icono de basurero rojo) contactos.
 - La información incluye nombre completo, relación y número de teléfono.
 - **Imagen de Referencia**:
-  ![Contactos de Confianza](../evidencias/smarthphone/user/03_contactos.png)
+  <img src="../evidencias/smarthphone/user/03_contactos.png" width="250" alt="Contactos de Confianza" />
 
 ### 3.5. Escáner de Código QR
 La app cuenta con un lector de cámara embebido para invitar a vecinos o vincular la cuenta a una Smart TV.
 - Analiza códigos generados por el mismo ecosistema.
 - Procesa el ID de vinculación al vuelo.
 - **Imagen de Referencia**:
-  ![Escáner QR](../evidencias/smarthphone/user/10_scanner_qr.png)
+  <img src="../evidencias/smarthphone/user/10_scanner_qr.png" width="250" alt="Escáner QR" />
 
 ---
 
@@ -87,8 +87,8 @@ Esta pantalla agrupa los ajustes del usuario, su avatar, datos personales y el h
 - **Smart TV Vecinal**: Botón para configurar la pantalla donde se proyectarán las alertas.
 - **Red Vecinal**: Acceso para salir de la red o administrarla (si se tiene permiso).
 - **Imagen de Referencia**:
-  ![Perfil de Usuario](../evidencias/smarthphone/user/06_perfil.png)
-  ![Vinculaciones](../evidencias/smarthphone/user/07_vinculaciones.png)
+  <img src="../evidencias/smarthphone/user/06_perfil.png" width="250" alt="Perfil de Usuario" />
+  <img src="../evidencias/smarthphone/user/07_vinculaciones.png" width="250" alt="Vinculaciones" />
 
 ### 4.2. Configuración del SmartWatch (Wear OS)
 La comunicación se realiza vía Bluetooth Low Energy (Wearable Data Layer API).
@@ -100,7 +100,7 @@ La comunicación se realiza vía Bluetooth Low Energy (Wearable Data Layer API).
 - Al darle a "Guardar Configuración", los datos se actualizan en Firebase, Room, y se envían en un Data Payload (`/cunasegura/config/update`) directo al reloj conectado.
 - Adicionalmente, el reloj pide automáticamente esta configuración al abrir su aplicación mediante una petición de sincronización (`sync_request`).
 - **Imagen de Referencia**:
-  ![Configuración Watch](../evidencias/smarthphone/user/08_config_watch.png)
+  <img src="../evidencias/smarthphone/user/08_config_watch.png" width="250" alt="Configuración Watch" />
 
 ### 4.3. Configuración de la Smart TV
 Permite activar la "Central de Monitoreo" en un televisor Android TV.
@@ -108,7 +108,7 @@ Permite activar la "Central de Monitoreo" en un televisor Android TV.
 - Muestra el ID de vinculación actual.
 - Informa sobre las características: recibir alertas visuales, mapa de SOS y datos de contacto de las víctimas.
 - **Imagen de Referencia**:
-  ![Configuración TV](../evidencias/smarthphone/user/09_config_tv.png)
+  <img src="../evidencias/smarthphone/user/09_config_tv.png" width="250" alt="Configuración TV" />
 
 ---
 
@@ -121,13 +121,13 @@ Similar a la vista del usuario, pero con controles avanzados.
 - Aparece la etiqueta **"Admin de Red"**.
 - El admin puede ver el **Código QR para invitar vecinos** de forma destacada, usado para reclutamiento rápido.
 - **Imagen de Referencia**:
-  ![Dashboard Admin de Red](../evidencias/smarthphone/adminColonia/01_red_vecinal_admin.png)
+  <img src="../evidencias/smarthphone/adminColonia/01_red_vecinal_admin.png" width="250" alt="Dashboard Admin de Red" />
 
 ### 5.2. Edición y Gestión de la Red
 - Al presionar el icono de lápiz, el administrador de la red puede cambiar el "Nombre de la Red" (Ej. de "Col. los Aztecas" a "Col. Centro").
 - Desde la lista de "Miembros Conectados", el admin puede seleccionar usuarios normales y presionar **"Expulsar"** si están haciendo mal uso de la red.
 - **Imagen de Referencia**:
-  ![Editar Red](../evidencias/smarthphone/adminColonia/02_editar_red.png)
+  <img src="../evidencias/smarthphone/adminColonia/02_editar_red.png" width="250" alt="Editar Red" />
 
 ### 5.3. Gestión de Alertas y Cancelaciones
 - Existe una sección de "Alertas de la Red Vecinal" donde el admin ve un historial en vivo de alertas disparadas.
@@ -135,7 +135,7 @@ Similar a la vista del usuario, pero con controles avanzados.
 - El admin tiene el poder de marcar alertas como **"CANCELADA"** o "ATENDIDA" para limpiar el mapa comunitario.
 - También se cuenta con un botón rojo (Danger) para "Salir de la Red Vecinal".
 - **Imagen de Referencia**:
-  ![Gestión Alertas](../evidencias/smarthphone/adminColonia/03_gestionar_miembros_alertas.png)
+  <img src="../evidencias/smarthphone/adminColonia/03_gestionar_miembros_alertas.png" width="250" alt="Gestión Alertas" />
 
 ---
 
@@ -153,7 +153,7 @@ Vista inicial exclusiva para administradores globales.
   - Smart TV App (Monitoreo).
   - BLE Smartwatch (Comunicación Bluetooth).
 - **Imagen de Referencia**:
-  ![Global Dashboard](../evidencias/smarthphone/adminglobal/01_global_dashboard.png)
+  <img src="../evidencias/smarthphone/adminglobal/01_global_dashboard.png" width="250" alt="Global Dashboard" />
 
 ### 6.2. Gestión Global de Miembros
 Pestaña de administración de cuentas a nivel macro.
@@ -162,7 +162,7 @@ Pestaña de administración de cuentas a nivel macro.
 - Pestaña secundaria para "Solicitudes" pendientes de aprobación.
 - Muestra el rol, teléfono, correo e ID de cada individuo.
 - **Imagen de Referencia**:
-  ![Global Miembros](../evidencias/smarthphone/adminglobal/02_global_miembros.png)
+  <img src="../evidencias/smarthphone/adminglobal/02_global_miembros.png" width="250" alt="Global Miembros" />
 
 ### 6.3. Configuración de la Red (Ajustes Globales y Políticas)
 El administrador global parametriza las reglas duras del sistema mediante controles de precisión (sliders).
@@ -173,8 +173,8 @@ El administrador global parametriza las reglas duras del sistema mediante contro
 - **Espera para nuevos miembros**: Días de enfriamiento ("cooldown") para que cuentas recién creadas puedan enviar un SOS (evita spam de bots o trolls).
 - **Tiempo vida de alerta (Global)**: Duración en la que un SOS sigue mostrándose en el mapa antes de auto-descartarse (Ej. 96 hrs).
 - **Imágenes de Referencia**:
-  ![Global Config 1](../evidencias/smarthphone/adminglobal/03_global_config_1.png)
-  ![Global Config 2](../evidencias/smarthphone/adminglobal/04_global_config_2.png)
+  <img src="../evidencias/smarthphone/adminglobal/03_global_config_1.png" width="250" alt="Global Config 1" />
+  <img src="../evidencias/smarthphone/adminglobal/04_global_config_2.png" width="250" alt="Global Config 2" />
 
 ### 6.4. Historial y Estadísticas
 Panel analítico para medir la efectividad de la aplicación comunitaria.
@@ -182,8 +182,8 @@ Panel analítico para medir la efectividad de la aplicación comunitaria.
 - **Gráficos de Distribución por Día**: Gráfico de líneas o barras comparando la cantidad de emergencias ocurridas en la semana.
 - **Registro de Auditoría Reciente**: Lista los administradores que han marcado alertas como "Real/Atendida", mostrando el timestamp exacto para mantener un rastro transparente de quién canceló qué alerta.
 - **Imágenes de Referencia**:
-  ![Global Stats 1](../evidencias/smarthphone/adminglobal/05_global_stats_1.png)
-  ![Global Stats 2](../evidencias/smarthphone/adminglobal/06_global_stats_2.png)
+  <img src="../evidencias/smarthphone/adminglobal/05_global_stats_1.png" width="250" alt="Global Stats 1" />
+  <img src="../evidencias/smarthphone/adminglobal/06_global_stats_2.png" width="250" alt="Global Stats 2" />
 
 ---
 
