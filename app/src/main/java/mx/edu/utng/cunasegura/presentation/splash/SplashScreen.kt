@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.tasks.await
 import mx.edu.utng.cunasegura.di.AppModule
 
 private val AzulOscuro @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
@@ -54,6 +55,19 @@ fun SplashScreen(
         if (firebaseUser == null) {
             onNavigateToLogin()
         } else {
+            try {
+                val snapshot = com.google.firebase.database.FirebaseDatabase.getInstance()
+                    .getReference("usuarios").child(firebaseUser.uid).get().await()
+                val estado = snapshot.child("estado").getValue(String::class.java) ?: "activo"
+                if (estado == "bloqueado" || estado == "suspendido") {
+                    com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                    onNavigateToLogin()
+                    return@LaunchedEffect
+                }
+            } catch (e: Exception) {
+                // Ignore
+            }
+
             // Obtenemos el usuario de Room que representa la sesión local activa
             val obtenerUsuarioActual = AppModule.provideObtenerUsuarioActualUseCase(context)
             val usuarioActual = obtenerUsuarioActual()

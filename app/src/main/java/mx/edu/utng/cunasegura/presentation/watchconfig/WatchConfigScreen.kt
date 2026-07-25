@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import mx.edu.utng.cunasegura.data.local.entity.ConfiguracionToqueEntity
 import mx.edu.utng.cunasegura.di.AppModule
 
@@ -77,6 +78,35 @@ class WatchConfigViewModel(private val context: Context) : ViewModel() {
             if (usuario != null) {
                 usuarioId = usuario.id
             }
+
+            val firebaseUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+            if (firebaseUser != null) {
+                try {
+                    val snap = com.google.firebase.database.FirebaseDatabase.getInstance()
+                        .getReference("configuracion_toques")
+                        .child(firebaseUser.uid)
+                        .get()
+                        .await()
+                    if (snap.exists()) {
+                        val t1 = snap.child("1").getValue(String::class.java) ?: ACCIONES_KEYS[0]
+                        val t2 = snap.child("2").getValue(String::class.java) ?: ACCIONES_KEYS[1]
+                        val t3 = snap.child("3").getValue(String::class.java) ?: ACCIONES_KEYS[2]
+                        val t4 = snap.child("4").getValue(String::class.java) ?: ACCIONES_KEYS[3]
+
+                        _uiState.value = _uiState.value.copy(
+                            toque1 = t1,
+                            toque2 = t2,
+                            toque3 = t3,
+                            toque4 = t4,
+                            isLoading = false
+                        )
+                        return@launch
+                    }
+                } catch (e: Exception) {
+                    // Fallback to local Room DB if offline
+                }
+            }
+
             val configs = toqueDao.obtenerPorUsuario(usuarioId)
             if (configs.isNotEmpty()) {
                 val map = configs.associate { it.cantidadToques to it.tipoAccion }
@@ -107,6 +137,27 @@ class WatchConfigViewModel(private val context: Context) : ViewModel() {
         viewModelScope.launch {
             val state = _uiState.value
             
+            // 1. Guardar en nube Firebase Realtime Database
+            val firebaseUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+            if (firebaseUser != null) {
+                try {
+                    val cloudMap = mapOf(
+                        "1" to state.toque1,
+                        "2" to state.toque2,
+                        "3" to state.toque3,
+                        "4" to state.toque4
+                    )
+                    com.google.firebase.database.FirebaseDatabase.getInstance()
+                        .getReference("configuracion_toques")
+                        .child(firebaseUser.uid)
+                        .setValue(cloudMap)
+                        .await()
+                } catch (e: Exception) {
+                    // Ignore offline
+                }
+            }
+
+            // 2. Guardar en Room local
             val t1 = toqueDao.obtenerPorUsuarioYToque(usuarioId, 1)
             toqueDao.insertarOActualizar(ConfiguracionToqueEntity(id = t1?.id ?: 0, usuarioId = usuarioId, cantidadToques = 1, tipoAccion = state.toque1))
 
@@ -122,11 +173,10 @@ class WatchConfigViewModel(private val context: Context) : ViewModel() {
             _uiState.value = _uiState.value.copy(guardado = true)
             
             val payload = "${state.toque1}|${state.toque2}|${state.toque3}|${state.toque4}"
-            val messageClient = com.google.android.gms.wearable.Wearable.getMessageClient(context)
-            val nodeClient = com.google.android.gms.wearable.Wearable.getNodeClient(context)
-            
             viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
                 try {
+                    val messageClient = com.google.android.gms.wearable.Wearable.getMessageClient(context)
+                    val nodeClient = com.google.android.gms.wearable.Wearable.getNodeClient(context)
                     val nodes = com.google.android.gms.tasks.Tasks.await(nodeClient.connectedNodes)
                     val data = payload.toByteArray()
                     for (node in nodes) {

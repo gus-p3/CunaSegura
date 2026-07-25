@@ -40,6 +40,7 @@ class WatchViewModel(
     private var countdownJob: Job? = null
     private var lifeCheckJob: Job? = null
     private var locationJob: Job? = null
+    private val _checkVidaMs = MutableStateFlow(120_000L) // Default 2 minutes
 
     init {
         // Cargar acciones iniciales desde DataStore
@@ -76,6 +77,18 @@ class WatchViewModel(
                 Log.i(TAG, "📥 [CONFIG-SYNC] Payload recibido del teléfono: $payload")
                 applyIncomingConfig(payload)
             }
+        }
+        
+        viewModelScope.launch {
+            configRepo.observeCheckVidaFromPhone().collect { ms ->
+                Log.i(TAG, "📥 [CONFIG-SYNC] CheckVida dinámico recibido: $ms ms")
+                _checkVidaMs.value = ms
+            }
+        }
+        
+        // Al arrancar, pedimos al teléfono que nos mande la última config
+        viewModelScope.launch {
+            configRepo.requestConfigSync()
         }
     }
 
@@ -253,7 +266,11 @@ class WatchViewModel(
 
     private fun startLifeCheckTimer() {
         lifeCheckJob = viewModelScope.launch {
-            delay(120_000L) // 2 minutes
+            val startTime = System.currentTimeMillis()
+            while (System.currentTimeMillis() - startTime < _checkVidaMs.value) {
+                delay(1000L)
+                if (_state.value.phase != AlertPhase.ACTIVE) return@launch
+            }
             if (_state.value.phase == AlertPhase.ACTIVE) {
                 _state.update { it.copy(phase = AlertPhase.LIFE_CHECK) }
             }

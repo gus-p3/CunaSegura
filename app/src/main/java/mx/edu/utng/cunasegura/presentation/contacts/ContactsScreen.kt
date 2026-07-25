@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -64,7 +65,7 @@ fun ContactsScreen() {
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { if (puedeAgregar) viewModel.onShowAddSheet(true) },
+                onClick = { if (puedeAgregar) viewModel.onShowSheet(null) },
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = { Text(if (puedeAgregar) "Añadir contacto" else "Máximo 5 contactos") },
                 containerColor = if (puedeAgregar) MaterialTheme.colorScheme.primary else Color.Gray,
@@ -112,7 +113,8 @@ fun ContactsScreen() {
                 items(contactos, key = { it.id }) { contacto ->
                     ContactoItem(
                         contacto = contacto,
-                        onEliminar = { viewModel.onEliminarContacto(contacto.id) }
+                        onEliminar = { viewModel.onEliminarContacto(contacto.id) },
+                        onEditar = { viewModel.onShowSheet(contacto) }
                     )
                 }
             }
@@ -122,7 +124,7 @@ fun ContactsScreen() {
     if (showSheet) {
         AddContactDialog(
             viewModel = viewModel,
-            onDismiss = { viewModel.onShowAddSheet(false) }
+            onDismiss = { viewModel.onHideSheet() }
         )
     }
 }
@@ -130,7 +132,8 @@ fun ContactsScreen() {
 @Composable
 private fun ContactoItem(
     contacto: ContactoEmergencia,
-    onEliminar: () -> Unit
+    onEliminar: () -> Unit,
+    onEditar: () -> Unit
 ) {
     val context = LocalContext.current
     var mostrarConfirmacion by remember { mutableStateOf(false) }
@@ -198,6 +201,14 @@ private fun ContactoItem(
                 )
             }
 
+            IconButton(onClick = onEditar) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = "Editar",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+
             IconButton(onClick = { mostrarConfirmacion = true }) {
                 Icon(
                     Icons.Default.Delete,
@@ -242,7 +253,7 @@ private fun AddContactDialog(
         containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
         title = {
             Text(
-                "Añadir contacto de confianza",
+                if (form.id == 0) "Añadir contacto de confianza" else "Editar contacto",
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold
             )
@@ -311,7 +322,7 @@ private fun AddContactDialog(
         },
         confirmButton = {
             Button(
-                onClick = { viewModel.onAgregarContacto() },
+                onClick = { viewModel.onGuardarContacto() },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) { Text("Guardar", color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary) }
         },

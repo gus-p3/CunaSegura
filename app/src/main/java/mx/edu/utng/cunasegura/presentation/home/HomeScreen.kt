@@ -109,6 +109,8 @@ fun HomeScreen(
     var pressProgress by remember { mutableFloatStateOf(0f) }
 
     val errorAlerta by viewModel.errorAlerta.collectAsState()
+    val tiempoAntiFalsa by viewModel.tiempoAntiFalsa.collectAsState()
+    val holdDurationMs = (tiempoAntiFalsa * 1000f).coerceAtLeast(1000f)
 
     // Listen for alert creation to navigate
     LaunchedEffect(alertaCreada, alertaId) {
@@ -127,13 +129,13 @@ fun HomeScreen(
         }
     }
 
-    // Timer logic for sustained 3 seconds press
-    LaunchedEffect(isPressed) {
+    // Timer logic for sustained press based on admin config
+    LaunchedEffect(isPressed, holdDurationMs) {
         if (isPressed) {
             val startTime = System.currentTimeMillis()
             while (isPressed && pressProgress < 1f) {
                 val elapsed = System.currentTimeMillis() - startTime
-                pressProgress = (elapsed / 3000f).coerceIn(0f, 1f)
+                pressProgress = (elapsed / holdDurationMs).coerceIn(0f, 1f)
                 if (pressProgress >= 1f) {
                     viewModel.activarSOS()
                 }
@@ -234,7 +236,7 @@ fun HomeScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Mantén 3 seg",
+                            text = "Mantén ${tiempoAntiFalsa.toInt()} seg",
                             color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium

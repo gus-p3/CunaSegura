@@ -16,7 +16,12 @@ class ConfigRepositoryImpl(
     override suspend fun saveSosActions(actions: List<SosAction>) = ds.saveSosActions(actions)
 
     override fun observeConfigFromPhone(): SharedFlow<String> = wearClient.incomingConfig
+    
+    override fun observeCheckVidaFromPhone(): SharedFlow<Long> = wearClient.incomingCheckVida
 
     override suspend fun sendConfigToPhone(configPayload: String): Result<Unit> =
         wearClient.sendConfigUpdate(configPayload)
+
+    override suspend fun requestConfigSync(): Result<Unit> =
+        wearClient.sendSyncRequest()
 }

@@ -18,6 +18,8 @@ data class NetworksUiState(
     val usuarioActual: Usuario? = null,
     val redActual: Network? = null,
     val miembrosRed: List<Usuario> = emptyList(),
+    val alertasRed: List<mx.edu.utng.cunasegura.domain.model.Alerta> = emptyList(),
+    val esAdminDeRed: Boolean = false,
     val redesCercanas: List<Pair<Network, Float>> = emptyList(), // Red vecinal y su distancia en metros
     val isLoading: Boolean = false,
     val mensaje: String? = null
@@ -49,8 +51,12 @@ class NetworksViewModel(context: Context) : ViewModel() {
                             .getReference("usuarios").child(uid).get().await()
                         
                         val networkId = userSnap.child("networkId").getValue(String::class.java) ?: uid
+                        val rolEnRed = userSnap.child("rolEnRed").getValue(String::class.java) ?: ""
                         val red = netRepo.obtenerNetworkPorId(networkId)
                         val miembros = if (red != null) netRepo.obtenerMiembrosDeRed(networkId) else emptyList()
+                        val alertas = if (red != null) netRepo.obtenerAlertasDeRed(networkId) else emptyList()
+
+                        val esAdmin = rolEnRed == "admin" || (red != null && red.id == uid)
                         
                         val currentDetalleUsuario = usuario.copy(
                             rol = userSnap.child("rol").getValue(String::class.java) ?: "usuario"
@@ -60,6 +66,8 @@ class NetworksViewModel(context: Context) : ViewModel() {
                             usuarioActual = currentDetalleUsuario,
                             redActual = red,
                             miembrosRed = miembros,
+                            alertasRed = alertas,
+                            esAdminDeRed = esAdmin,
                             isLoading = false
                         )
                     } else {
@@ -73,6 +81,46 @@ class NetworksViewModel(context: Context) : ViewModel() {
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, mensaje = "Error al cargar información: ${e.message}")
+            }
+        }
+    }
+
+    fun expulsarMiembro(uidMiembro: String) {
+        viewModelScope.launch {
+            try {
+                val redId = _uiState.value.redActual?.id ?: return@launch
+                _uiState.value = _uiState.value.copy(isLoading = true)
+                val exito = netRepo.expulsarMiembro(uidMiembro, redId)
+                if (exito) {
+                    _uiState.value = _uiState.value.copy(mensaje = "Usuario expulsado de la red")
+                    cargarInformacion()
+                } else {
+                    _uiState.value = _uiState.value.copy(isLoading = false, mensaje = "Error al expulsar usuario")
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoading = false, mensaje = "Error: ${e.message}")
+            }
+        }
+    }
+
+    fun actualizarNombreRed(nuevoNombre: String) {
+        viewModelScope.launch {
+            val redId = _uiState.value.redActual?.id ?: return@launch
+            if (nuevoNombre.isBlank()) {
+                _uiState.value = _uiState.value.copy(mensaje = "El nombre de la red no puede estar vacío")
+                return@launch
+            }
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            try {
+                val exito = netRepo.actualizarNombreRed(redId, nuevoNombre.trim())
+                if (exito) {
+                    _uiState.value = _uiState.value.copy(mensaje = "Nombre de red actualizado a '$nuevoNombre'")
+                    cargarInformacion()
+                } else {
+                    _uiState.value = _uiState.value.copy(isLoading = false, mensaje = "Error al cambiar nombre")
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoading = false, mensaje = "Error: ${e.message}")
             }
         }
     }

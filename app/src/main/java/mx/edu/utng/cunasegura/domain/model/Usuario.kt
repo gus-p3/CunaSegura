@@ -18,5 +18,6 @@ data class Usuario(
     val rol: String = "usuario",
     val estado: String = "activo",
     val networkId: String = "",
-    val fechaIngreso: Long = 0L
+    val fechaIngreso: Long = 0L,
+    val uid: String = ""
 )

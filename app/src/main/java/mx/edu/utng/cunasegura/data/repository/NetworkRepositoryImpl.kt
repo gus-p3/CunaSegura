@@ -92,11 +92,115 @@ class NetworkRepositoryImpl : INetworkRepository {
                     estado = userSnap.child("estado").getValue(String::class.java) ?: "activo",
                     tvVinculada = userSnap.child("tvVinculada").getValue(Boolean::class.java) ?: false,
                     networkId = userSnap.child("networkId").getValue(String::class.java) ?: "",
-                    fechaIngreso = userSnap.child("fechaIngreso").getValue(Long::class.java) ?: 0L
+                    fechaIngreso = userSnap.child("fechaIngreso").getValue(Long::class.java) ?: 0L,
+                    uid = uid
                 )
                 list.add(user)
             }
         }
         return list
+    }
+
+    override suspend fun expulsarMiembro(usuarioId: String, networkId: String): Boolean {
+        return try {
+            db.getReference("networks")
+                .child(networkId)
+                .child("miembros")
+                .child(usuarioId)
+                .removeValue()
+                .await()
+
+            val updates = mapOf<String, Any>(
+                "networkId" to usuarioId,
+                "rolEnRed" to ""
+            )
+            db.getReference("usuarios")
+                .child(usuarioId)
+                .updateChildren(updates)
+                .await()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    override suspend fun actualizarNombreRed(networkId: String, nuevoNombre: String): Boolean {
+        return try {
+            db.getReference("networks").child(networkId).child("nombre").setValue(nuevoNombre).await()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    override suspend fun obtenerAlertasDeRed(networkId: String): List<mx.edu.utng.cunasegura.domain.model.Alerta> {
+        return try {
+            val snapshot = db.getReference("alertas").get().await()
+            val list = mutableListOf<mx.edu.utng.cunasegura.domain.model.Alerta>()
+            for (child in snapshot.children) {
+                val netId = child.child("networkId").getValue(String::class.java) ?: ""
+                if (netId == networkId || networkId.isBlank()) {
+                    val rawUsuarioId = child.child("usuarioId").value
+                    val usuarioIdInt = when (rawUsuarioId) {
+                        is Long -> rawUsuarioId.toInt()
+                        is Int -> rawUsuarioId
+                        is String -> rawUsuarioId.toIntOrNull() ?: 0
+                        else -> 0
+                    }
+                    val alerta = mx.edu.utng.cunasegura.domain.model.Alerta(
+                        id = child.child("id").getValue(Int::class.java) ?: 0,
+                        usuarioId = usuarioIdInt,
+                        nombreUsuario = child.child("nombreUsuario").getValue(String::class.java) ?: "Vecino",
+                        estado = child.child("estado").getValue(String::class.java) ?: "",
+                        latitud = child.child("latitud").getValue(Double::class.java) ?: 0.0,
+                        longitud = child.child("longitud").getValue(Double::class.java) ?: 0.0,
+                        fueAtendida = child.child("fueAtendida").getValue(Boolean::class.java) ?: false,
+                        esFalsaAlarma = child.child("esFalsaAlarma").getValue(Boolean::class.java) ?: false,
+                        creadoEn = child.child("creadoEn").getValue(Long::class.java) ?: 0L,
+                        networkId = netId
+                    )
+                    list.add(alerta)
+                }
+            }
+            list.sortedByDescending { it.creadoEn }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    override suspend fun guardarConfiguracionGlobal(
+        tipo: String,
+        radio: Double,
+        tiempoAntiFalsa: Double,
+        checkVida: Double,
+        esperarDiasNuevos: Int,
+        tiempoVidaAlerta: Double
+    ) {
+        val map = mapOf(
+            "tipo" to tipo,
+            "radio" to radio,
+            "tiempoAntiFalsa" to tiempoAntiFalsa,
+            "checkVida" to checkVida,
+            "esperarDiasNuevos" to esperarDiasNuevos,
+            "tiempoVidaAlerta" to tiempoVidaAlerta
+        )
+        db.getReference("configuracion_global").setValue(map).await()
+    }
+
+    override suspend fun obtenerConfiguracionGlobal(): Map<String, Any> {
+        return try {
+            val snapshot = db.getReference("configuracion_global").get().await()
+            if (snapshot.exists()) {
+                val map = mutableMapOf<String, Any>()
+                snapshot.children.forEach { child ->
+                    val k = child.key
+                    val v = child.value
+                    if (k != null && v != null) map[k] = v
+                }
+                map
+            } else emptyMap()
+        } catch (e: Exception) {
+            emptyMap()
+        }
     }
 }

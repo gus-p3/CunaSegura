@@ -37,4 +37,9 @@ interface IAlertaRepository {
      * Recupera el historial completo de alertas.
      */
     suspend fun obtenerTodasLasAlertas(): List<Alerta>
+
+    /**
+     * Recupera las alertas de una red específica.
+     */
+    suspend fun obtenerAlertasPorNetworkId(networkId: String): List<Alerta>
 }

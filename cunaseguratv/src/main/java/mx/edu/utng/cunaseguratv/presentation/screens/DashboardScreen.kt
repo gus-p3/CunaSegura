@@ -72,6 +72,9 @@ fun DashboardScreen(
             setMultiTouchControls(true)
             isHorizontalMapRepetitionEnabled = false
             isVerticalMapRepetitionEnabled = false
+            isFocusable = false
+            isFocusableInTouchMode = false
+            descendantFocusability = android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS
             controller.setZoom(15.0)
             controller.setCenter(GeoPoint(21.1561, -100.9325))
             onResume() // iniciar carga de tiles de inmediato
@@ -394,17 +397,15 @@ fun DashboardScreen(
                 )
 
                 // Controles del mapa navegables con control remoto / D-Pad
-                Card(
-                    onClick = {},
+                Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(14.dp),
-                    colors = androidx.tv.material3.CardDefaults.colors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f)
-                    )
+                        .padding(14.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f))
+                        .padding(10.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(10.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {

@@ -163,6 +163,13 @@ class AlertaRepositoryImpl(
     }
 
     override fun obtenerAlertasVecinalesActivas(): Flow<List<Alerta>> = callbackFlow {
+        // Fetch config once when flow starts
+        var tiempoVidaMs = 720L * 60 * 1000 // 720 minutes default (12h)
+        FirebaseDatabase.getInstance().getReference("configuracion_global").child("tiempoVidaAlerta").get().addOnSuccessListener { snap ->
+            val minutos = snap.getValue(Double::class.java) ?: 720.0
+            tiempoVidaMs = (minutos * 60 * 1000).toLong()
+        }
+
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val alertas = mutableListOf<Alerta>()
@@ -198,7 +205,12 @@ class AlertaRepositoryImpl(
                         Log.e(TAG, "Error parsing alerta", e)
                     }
                 }
-                trySend(alertas)
+                // Filtrar por tiempoVidaAlerta
+                val ahora = System.currentTimeMillis()
+                val activas = alertas.filter { alerta ->
+                    (ahora - alerta.creadoEn) <= tiempoVidaMs
+                }
+                trySend(activas)
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -231,6 +243,49 @@ class AlertaRepositoryImpl(
             list
         } catch (e: Exception) {
             Log.e(TAG, "Error getting all alerts: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    override suspend fun obtenerAlertasPorNetworkId(networkId: String): List<Alerta> {
+        return try {
+            val snapshot = dbRef.get().await()
+            val list = mutableListOf<Alerta>()
+            for (child in snapshot.children) {
+                val netId = child.child("networkId").getValue(String::class.java) ?: ""
+                if (netId == networkId || networkId.isBlank()) {
+                    val rawUsuarioId = child.child("usuarioId").value
+                    val usuarioIdInt = when (rawUsuarioId) {
+                        is Long -> rawUsuarioId.toInt()
+                        is Int -> rawUsuarioId
+                        is String -> rawUsuarioId.toIntOrNull() ?: 0
+                        else -> 0
+                    }
+                    val alerta = Alerta(
+                        id = child.child("id").getValue(Int::class.java) ?: 0,
+                        usuarioId = usuarioIdInt,
+                        nombreUsuario = child.child("nombreUsuario").getValue(String::class.java) ?: "Vecino",
+                        estado = child.child("estado").getValue(String::class.java) ?: "",
+                        latitud = child.child("latitud").getValue(Double::class.java) ?: 0.0,
+                        longitud = child.child("longitud").getValue(Double::class.java) ?: 0.0,
+                        fueAtendida = child.child("fueAtendida").getValue(Boolean::class.java) ?: false,
+                        esFalsaAlarma = child.child("esFalsaAlarma").getValue(Boolean::class.java) ?: false,
+                        creadoEn = child.child("creadoEn").getValue(Long::class.java) ?: 0L,
+                        networkId = netId
+                    )
+                    list.add(alerta)
+                }
+            }
+            
+            // Obtener config
+            val configSnap = FirebaseDatabase.getInstance().getReference("configuracion_global").child("tiempoVidaAlerta").get().await()
+            val minutos = configSnap.getValue(Double::class.java) ?: 720.0
+            val tiempoVidaMs = (minutos * 60 * 1000).toLong()
+            val ahora = System.currentTimeMillis()
+            
+            list.filter { (ahora - it.creadoEn) <= tiempoVidaMs }.sortedByDescending { it.creadoEn }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting network alerts: ${e.message}", e)
             emptyList()
         }
     }

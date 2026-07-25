@@ -15,6 +15,12 @@ class FirebaseAlertListener {
     private val TAG = "FirebaseAlertListener"
 
     fun escucharAlertasActivas(targetNetworkId: String = ""): Flow<List<AlertaTV>> = callbackFlow {
+        var tiempoVidaMs = 720L * 60 * 1000 // 720 minutes default (12h)
+        FirebaseDatabase.getInstance().getReference("configuracion_global").child("tiempoVidaAlerta").get().addOnSuccessListener { snap ->
+            val minutos = snap.getValue(Double::class.java) ?: 720.0
+            tiempoVidaMs = (minutos * 60 * 1000).toLong()
+        }
+
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val alertas = mutableListOf<AlertaTV>()
@@ -52,7 +58,16 @@ class FirebaseAlertListener {
                         Log.e(TAG, "Error parsing alerta en TV", e)
                     }
                 }
-                trySend(alertas.sortedByDescending { it.creadoEn })
+                
+                val ahora = System.currentTimeMillis()
+                val activas = alertas.filter { (ahora - it.creadoEn) <= tiempoVidaMs }
+                
+                // Agrupar por usuario y quedarnos solo con la alerta más reciente por persona
+                val activasPorUsuario = activas.groupBy { it.nombreUsuario }.map { entry ->
+                    entry.value.maxByOrNull { it.creadoEn }!!
+                }
+                
+                trySend(activasPorUsuario.sortedByDescending { it.creadoEn })
             }
 
             override fun onCancelled(error: DatabaseError) {

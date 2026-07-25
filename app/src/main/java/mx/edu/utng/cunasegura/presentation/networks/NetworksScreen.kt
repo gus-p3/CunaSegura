@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Radar
@@ -54,6 +55,8 @@ fun NetworksScreen(onBack: () -> Unit) {
     var tipoNuevaRed by remember { mutableStateOf("Abierta") }
     var radioNuevaRed by remember { mutableStateOf("200") }
     var mostrarDialogoCrear by remember { mutableStateOf(false) }
+    var mostrarDialogoEditarNombre by remember { mutableStateOf(false) }
+    var nuevoNombreRedInput by remember { mutableStateOf("") }
 
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     
@@ -129,10 +132,42 @@ fun NetworksScreen(onBack: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(16.dp))
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Shield, contentDescription = null, tint = AzulCunaSegura, modifier = Modifier.size(24.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(red.nombre, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = AzulCunaSegura)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Shield, contentDescription = null, tint = AzulCunaSegura, modifier = Modifier.size(24.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(red.nombre, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = AzulCunaSegura)
+                                if (uiState.esAdminDeRed) {
+                                    IconButton(
+                                        onClick = {
+                                            nuevoNombreRedInput = red.nombre
+                                            mostrarDialogoEditarNombre = true
+                                        },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Edit,
+                                            contentDescription = "Editar nombre de red",
+                                            tint = AzulCunaSegura,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                            }
+                            if (uiState.esAdminDeRed) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(AzulCunaSegura)
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Text("Admin de Red", color = MaterialTheme.colorScheme.onPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
                         }
                         
                         Text("Tipo de red: ${red.tipo}", fontSize = 14.sp, color = Color.DarkGray)
@@ -165,24 +200,79 @@ fun NetworksScreen(onBack: () -> Unit) {
                         uiState.miembrosRed.forEach { miembro ->
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column {
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(miembro.nombre, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                     Text(miembro.telefono, fontSize = 12.sp, color = Color.Gray)
                                 }
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(if (miembro.rol == "administrador") AzulCunaSegura.copy(alpha = 0.2f) else Color.LightGray)
-                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(if (miembro.rol == "administrador" || miembro.uid == red.id) AzulCunaSegura.copy(alpha = 0.2f) else Color.LightGray)
+                                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = if (miembro.uid == red.id) "ADMIN RED" else miembro.rol.uppercase(),
+                                            fontSize = 10.sp,
+                                            color = if (miembro.rol == "administrador" || miembro.uid == red.id) AzulCunaSegura else Color.DarkGray,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                    
+                                    if (uiState.esAdminDeRed && miembro.uid != uiState.usuarioActual?.uid && miembro.uid.isNotEmpty()) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        TextButton(
+                                            onClick = { viewModel.expulsarMiembro(miembro.uid) },
+                                            colors = ButtonDefaults.textButtonColors(contentColor = RojoSOS)
+                                        ) {
+                                            Text("Expulsar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                        // Alertas de la Red Vecinal
+                        Text("Alertas de la Red Vecinal (${uiState.alertasRed.size})", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = AzulCunaSegura)
+                        if (uiState.alertasRed.isEmpty()) {
+                            Text("No hay alertas registradas en esta red.", fontSize = 12.sp, color = Color.Gray)
+                        } else {
+                            uiState.alertasRed.take(5).forEach { alerta ->
+                                Card(
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (alerta.estado == "activa") RojoSOS.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant
+                                    ),
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
                                 ) {
-                                    Text(
-                                        text = miembro.rol.uppercase(),
-                                        fontSize = 10.sp,
-                                        color = if (miembro.rol == "administrador") AzulCunaSegura else Color.DarkGray,
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                    Row(
+                                        modifier = Modifier.padding(12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column {
+                                            Text(alerta.nombreUsuario, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                            Text("Ubicación: ${alerta.latitud}, ${alerta.longitud}", fontSize = 11.sp, color = Color.Gray)
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(if (alerta.estado == "activa") RojoSOS else Color.Gray)
+                                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = alerta.estado.uppercase(),
+                                                fontSize = 10.sp,
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -383,6 +473,43 @@ fun NetworksScreen(onBack: () -> Unit) {
             },
             dismissButton = {
                 TextButton(onClick = { mostrarDialogoCrear = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    // Diálogo para editar el nombre de la red vecinal
+    if (mostrarDialogoEditarNombre) {
+        AlertDialog(
+            onDismissRequest = { mostrarDialogoEditarNombre = false },
+            title = { Text("Editar Nombre de la Red", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("Ingresa el nuevo nombre para tu red vecinal:", fontSize = 14.sp, color = Color.DarkGray)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = nuevoNombreRedInput,
+                        onValueChange = { nuevoNombreRedInput = it },
+                        label = { Text("Nombre de la Red") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.actualizarNombreRed(nuevoNombreRedInput)
+                        mostrarDialogoEditarNombre = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AzulCunaSegura)
+                ) {
+                    Text("Guardar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarDialogoEditarNombre = false }) {
                     Text("Cancelar")
                 }
             }

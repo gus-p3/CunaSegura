@@ -21,6 +21,9 @@ class WearMessageClient(private val context: Context) : MessageClient.OnMessageR
     private val _incomingConfig = MutableSharedFlow<String>(extraBufferCapacity = 1)
     val incomingConfig: SharedFlow<String> = _incomingConfig.asSharedFlow()
 
+    private val _incomingCheckVida = MutableSharedFlow<Long>(extraBufferCapacity = 1)
+    val incomingCheckVida: SharedFlow<Long> = _incomingCheckVida.asSharedFlow()
+
     init {
         messageClient.addListener(this)
         Log.d(TAG, "WearMessageClient inicializado y oyendo mensajes")
@@ -32,6 +35,11 @@ class WearMessageClient(private val context: Context) : MessageClient.OnMessageR
             val payload = String(messageEvent.data)
             _incomingConfig.tryEmit(payload)
             Log.d(TAG, "Configuración extraída: $payload")
+        } else if (messageEvent.path == "/cunasegura/config/checkVida") {
+            val payload = String(messageEvent.data)
+            val ms = payload.toLongOrNull() ?: 120_000L
+            _incomingCheckVida.tryEmit(ms)
+            Log.d(TAG, "CheckVida dinámico recibido: $ms ms")
         }
     }
 
@@ -75,6 +83,20 @@ class WearMessageClient(private val context: Context) : MessageClient.OnMessageR
             if (nodes.isNotEmpty()) Result.success(Unit) else Result.failure(Exception("No hay teléfono conectado"))
         } catch (e: Exception) {
             Log.e(TAG, "Error enviando config", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun sendSyncRequest(): Result<Unit> = withContext(Dispatchers.IO) {
+        Log.d(TAG, "📡 [CONFIG-SYNC] Solicitando config al Teléfono...")
+        try {
+            val nodes = Tasks.await(nodeClient.connectedNodes)
+            for (node in nodes) {
+                messageClient.sendMessage(node.id, "/cunasegura/config/sync_request", "SYNC".toByteArray())
+            }
+            if (nodes.isNotEmpty()) Result.success(Unit) else Result.failure(Exception("No hay teléfono conectado"))
+        } catch (e: Exception) {
+            Log.e(TAG, "Error enviando sync_request", e)
             Result.failure(e)
         }
     }

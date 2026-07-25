@@ -28,6 +28,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.edu.utng.cunasegura.di.AppModule
 import mx.edu.utng.cunasegura.domain.model.Usuario
 
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Lock
+import android.widget.Toast
+import kotlinx.coroutines.launch
+
+import androidx.compose.material.icons.filled.Tv
+
 private val AzulCunaSegura @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
 private val RojoSOS @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.error
 
@@ -35,15 +42,30 @@ private val RojoSOS @androidx.compose.runtime.Composable get() = androidx.compos
 @Composable
 fun UserProfileScreen(
     onLogout: () -> Unit,
-    onNavigateToNetworks: () -> Unit
+    onNavigateToNetworks: () -> Unit,
+    onNavigateToWatchConfig: () -> Unit = {},
+    onNavigateToTvConfig: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     var usuario by remember { mutableStateOf<Usuario?>(null) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+
+    var editNombre by remember { mutableStateOf("") }
+    var editTelefono by remember { mutableStateOf("") }
+    var editPassword by remember { mutableStateOf("") }
+    var isSaving by remember { mutableStateOf(false) }
+
+    val cargarUsuario = {
+        coroutineScope.launch {
+            val uc = AppModule.provideObtenerUsuarioActualUseCase(context)
+            usuario = uc()
+        }
+    }
 
     LaunchedEffect(Unit) {
-        val uc = AppModule.provideObtenerUsuarioActualUseCase(context)
-        usuario = uc()
+        cargarUsuario()
     }
 
     Scaffold(
@@ -56,6 +78,16 @@ fun UserProfileScreen(
                         color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold
                     )
+                },
+                actions = {
+                    IconButton(onClick = {
+                        editNombre = usuario?.nombre ?: ""
+                        editTelefono = usuario?.telefono ?: ""
+                        editPassword = ""
+                        showEditDialog = true
+                    }) {
+                        Icon(Icons.Default.Edit, contentDescription = "Editar Perfil", tint = MaterialTheme.colorScheme.onPrimary)
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AzulCunaSegura)
             )
@@ -116,7 +148,25 @@ fun UserProfileScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Botón Editar Perfil principal
+            OutlinedButton(
+                onClick = {
+                    editNombre = usuario?.nombre ?: ""
+                    editTelefono = usuario?.telefono ?: ""
+                    editPassword = ""
+                    showEditDialog = true
+                },
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Edit, contentDescription = null, tint = AzulCunaSegura)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Modificar Datos / Contraseña", fontWeight = FontWeight.Bold, color = AzulCunaSegura)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Info Card
             Card(
@@ -135,13 +185,13 @@ fun UserProfileScreen(
                         ProfileRow(icon = Icons.Default.Call, label = "Teléfono", value = usuario?.telefono ?: "")
                         HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant)
                     }
-                    ProfileRow(icon = Icons.Default.Shield, label = "Estado", value = "Activo")
+                    ProfileRow(icon = Icons.Default.Shield, label = "Estado", value = usuario?.estado?.replaceFirstChar { it.uppercase() } ?: "Activo")
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Acceso directo a configuración de dispositivos
+            // Configuración de Dispositivos completa
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
@@ -149,39 +199,45 @@ fun UserProfileScreen(
                     .fillMaxWidth()
                     .shadow(2.dp, RoundedCornerShape(16.dp))
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        "Dispositivos Vinculados",
+                        "Dispositivos Vinculados y Toques",
                         fontWeight = FontWeight.Bold,
                         color = AzulCunaSegura,
                         fontSize = 14.sp
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // Item SmartWatch BLE y Toques
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Default.Watch, contentDescription = null, tint = AzulCunaSegura, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("SmartWatch BLE", fontSize = 14.sp, color = Color.DarkGray)
-                        Spacer(modifier = Modifier.weight(1f))
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(
-                                    if (mx.edu.utng.cunasegura.data.local.prefs.PreferencesManager(LocalContext.current).isWatchLinked())
-                                        androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer else androidx.compose.material3.MaterialTheme.colorScheme.tertiaryContainer
-                                )
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
-                        ) {
-                            Text(
-                                text = if (mx.edu.utng.cunasegura.data.local.prefs.PreferencesManager(LocalContext.current).isWatchLinked())
-                                    "Vinculado" else "Sin vincular",
-                                fontSize = 11.sp,
-                                color = if (mx.edu.utng.cunasegura.data.local.prefs.PreferencesManager(LocalContext.current).isWatchLinked())
-                                    androidx.compose.material3.MaterialTheme.colorScheme.secondary else androidx.compose.material3.MaterialTheme.colorScheme.tertiary,
-                                fontWeight = FontWeight.Bold
-                            )
+                        Icon(Icons.Default.Watch, contentDescription = null, tint = AzulCunaSegura, modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("SmartWatch BLE", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                            Text("Configurar gestos y toques SOS", fontSize = 12.sp, color = Color.Gray)
+                        }
+                        TextButton(onClick = onNavigateToWatchConfig) {
+                            Text("Configurar", fontWeight = FontWeight.Bold, color = AzulCunaSegura)
+                        }
+                    }
+
+                    HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant)
+
+                    // Item Smart TV Vecinal
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Tv, contentDescription = null, tint = AzulCunaSegura, modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Smart TV Vecinal", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                            Text(if (usuario?.tvVinculada == true) "TV Vinculada" else "Vincular TV de la Red", fontSize = 12.sp, color = Color.Gray)
+                        }
+                        TextButton(onClick = onNavigateToTvConfig) {
+                            Text(if (usuario?.tvVinculada == true) "Ajustes" else "Vincular", fontWeight = FontWeight.Bold, color = AzulCunaSegura)
                         }
                     }
                 }
@@ -227,6 +283,76 @@ fun UserProfileScreen(
                 Text("Cerrar Sesión", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
         }
+    }
+
+    if (showEditDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!isSaving) showEditDialog = false },
+            title = { Text("Editar Perfil", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = editNombre,
+                        onValueChange = { editNombre = it },
+                        label = { Text("Nombre Completo") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editTelefono,
+                        onValueChange = { editTelefono = it },
+                        label = { Text("Teléfono de Contacto") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editPassword,
+                        onValueChange = { editPassword = it },
+                        label = { Text("Nueva Contraseña (Opcional)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (editNombre.isBlank()) {
+                            Toast.makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        isSaving = true
+                        coroutineScope.launch {
+                            val repo = AppModule.provideUsuarioRepository(context)
+                            val res = repo.actualizarPerfilUsuario(
+                                nombre = editNombre,
+                                telefono = editTelefono,
+                                nuevaPassword = editPassword.ifBlank { null }
+                            )
+                            isSaving = false
+                            if (res.isSuccess) {
+                                Toast.makeText(context, "¡Perfil actualizado con éxito!", Toast.LENGTH_SHORT).show()
+                                showEditDialog = false
+                                cargarUsuario()
+                            } else {
+                                Toast.makeText(context, "Error: ${res.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    },
+                    enabled = !isSaving,
+                    colors = ButtonDefaults.buttonColors(containerColor = AzulCunaSegura)
+                ) {
+                    if (isSaving) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
+                    } else {
+                        Text("Guardar Cambios")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }, enabled = !isSaving) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 
     if (showLogoutDialog) {

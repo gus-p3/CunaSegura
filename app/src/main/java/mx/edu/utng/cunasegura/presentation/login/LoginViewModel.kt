@@ -83,6 +83,17 @@ class LoginViewModel(
                 if (firebaseUser != null) {
                     // Fetch real user data from Realtime Database
                     val snapshot = db.getReference("usuarios").child(firebaseUser.uid).get().await()
+                    val estadoDb = snapshot.child("estado").getValue(String::class.java) ?: "activo"
+                    
+                    if (estadoDb == "bloqueado" || estadoDb == "suspendido") {
+                        auth.signOut()
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = "Tu cuenta ha sido BLOQUEADA por el Administrador Global. Contacta a soporte."
+                        )
+                        return@launch
+                    }
+
                     val nombre = snapshot.child("nombre").getValue(String::class.java) ?: firebaseUser.displayName ?: correo.substringBefore("@")
                     val telefono = snapshot.child("telefono").getValue(String::class.java) ?: ""
                     val rolDb = snapshot.child("rol").getValue(String::class.java) ?: "usuario"

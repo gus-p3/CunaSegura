@@ -28,10 +28,10 @@ Este módulo contiene la aplicación diseñada para relojes inteligentes con **W
 
 | Pantalla | Descripción |
 |---|---|
-| ![Pantalla Principal](../evidencias/01_pantalla_principal.png) | **Estado Seguro** — Pantalla principal con los 4 botones de acción |
-| ![Cuenta Regresiva](../evidencias/02_wear_cuenta_regresiva.png) | **Cuenta Regresiva** — 5 segundos para cancelar (acción 3 toques) |
-| ![Alerta Activa GPS](../evidencias/03_wear_alerta_activa.png) | **Ubicación GPS** — Mapa con dirección en tiempo real (alerta activa) |
-| ![Compartiendo GPS](../evidencias/04_wear_estado_seguro.png) | **Compartiendo GPS** — Transmisión de ubicación a contactos |
+| ![Pantalla Principal](../evidencias/wear/01_pantalla_principal.png) | **Estado Seguro** — Pantalla principal con los 4 botones de acción |
+| ![Cuenta Regresiva](../evidencias/wear/02_wear_cuenta_regresiva.png) | **Cuenta Regresiva** — 5 segundos para cancelar (acción 3 toques) |
+| ![Alerta Activa GPS](../evidencias/wear/03_wear_alerta_activa.png) | **Ubicación GPS** — Mapa con dirección en tiempo real (alerta activa) |
+| ![Compartiendo GPS](../evidencias/wear/04_wear_estado_seguro.png) | **Compartiendo GPS** — Transmisión de ubicación a contactos |
 
 ## Compilación e Instalación
 

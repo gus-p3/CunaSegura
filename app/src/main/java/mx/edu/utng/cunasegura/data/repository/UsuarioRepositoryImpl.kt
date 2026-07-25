@@ -22,7 +22,6 @@ class UsuarioRepositoryImpl : IUsuarioRepository {
             "telefono" to usuario.telefono,
             "correo" to usuario.correo,
             "rol" to usuario.rol,
-            "estado" to usuario.estado,
             "tvVinculada" to usuario.tvVinculada,
             "networkId" to usuario.networkId.ifBlank { firebaseUser.uid },
             "fechaIngreso" to usuario.fechaIngreso
@@ -76,7 +75,8 @@ class UsuarioRepositoryImpl : IUsuarioRepository {
                 estado = child.child("estado").getValue(String::class.java) ?: "activo",
                 tvVinculada = child.child("tvVinculada").getValue(Boolean::class.java) ?: false,
                 networkId = child.child("networkId").getValue(String::class.java) ?: "",
-                fechaIngreso = child.child("fechaIngreso").getValue(Long::class.java) ?: 0L
+                fechaIngreso = child.child("fechaIngreso").getValue(Long::class.java) ?: 0L,
+                uid = child.key ?: ""
             )
         }
     }
@@ -107,8 +107,27 @@ class UsuarioRepositoryImpl : IUsuarioRepository {
             estado = snapshot.child("estado").getValue(String::class.java) ?: "activo",
             tvVinculada = snapshot.child("tvVinculada").getValue(Boolean::class.java) ?: false,
             networkId = snapshot.child("networkId").getValue(String::class.java) ?: "",
-            fechaIngreso = snapshot.child("fechaIngreso").getValue(Long::class.java) ?: 0L
+            fechaIngreso = snapshot.child("fechaIngreso").getValue(Long::class.java) ?: 0L,
+            uid = firebaseUser.uid
         )
+    }
+
+    override suspend fun actualizarPerfilUsuario(nombre: String, telefono: String, nuevaPassword: String?): Result<Unit> {
+        val firebaseUser = auth.currentUser ?: return Result.failure(Exception("Sesión no iniciada"))
+        return try {
+            val updates = mutableMapOf<String, Any>(
+                "nombre" to nombre,
+                "telefono" to telefono
+            )
+            db.getReference("usuarios").child(firebaseUser.uid).updateChildren(updates).await()
+
+            if (!nuevaPassword.isNullOrBlank()) {
+                firebaseUser.updatePassword(nuevaPassword).await()
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     override suspend fun limpiarSesionLocal() {

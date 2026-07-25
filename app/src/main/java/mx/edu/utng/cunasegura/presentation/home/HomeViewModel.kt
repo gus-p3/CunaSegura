@@ -31,6 +31,9 @@ class HomeViewModel(
     private val _errorAlerta = MutableStateFlow<String?>(null)
     val errorAlerta: StateFlow<String?> = _errorAlerta.asStateFlow()
 
+    private val _tiempoAntiFalsa = MutableStateFlow(3f)
+    val tiempoAntiFalsa: StateFlow<Float> = _tiempoAntiFalsa.asStateFlow()
+
     init {
         cargarUsuarioActual()
     }
@@ -53,6 +56,14 @@ class HomeViewModel(
                             networkId = netId,
                             fechaIngreso = fechaIngreso
                         )
+                        val db = com.google.firebase.database.FirebaseDatabase.getInstance()
+                        val globalSnap = db.getReference("configuracion_global").get().await()
+                        if (globalSnap.exists()) {
+                            val taf = globalSnap.child("tiempoAntiFalsa").getValue(Double::class.java)?.toFloat()
+                            if (taf != null) {
+                                _tiempoAntiFalsa.value = taf.coerceIn(1f, 10f)
+                            }
+                        }
                     }
                 } catch (e: Exception) {
                     // Ignore

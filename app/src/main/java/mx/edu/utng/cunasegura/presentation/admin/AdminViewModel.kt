@@ -41,6 +41,9 @@ class AdminViewModel(
     private val _statusMessage = MutableStateFlow<String?>(null)
     val statusMessage: StateFlow<String?> = _statusMessage.asStateFlow()
 
+    private val _tiempoVidaAlerta = MutableStateFlow<Double>(720.0)
+    val tiempoVidaAlerta: StateFlow<Double> = _tiempoVidaAlerta.asStateFlow()
+
     init {
         cargarDatos()
     }
@@ -67,6 +70,11 @@ class AdminViewModel(
                 // Cargar todas las alertas para estadísticas
                 val todasAlertas = alertaRepository.obtenerTodasLasAlertas()
                 _alertas.value = todasAlertas
+
+                // Cargar configuracion global
+                val config = networkRepository.obtenerConfiguracionGlobal()
+                val tiempoVidaStr = config["tiempoVidaAlerta"]?.toString() ?: "720.0"
+                _tiempoVidaAlerta.value = tiempoVidaStr.toDoubleOrNull() ?: 720.0
             } catch (e: Exception) {
                 _statusMessage.value = "Error al cargar datos: ${e.message}"
             }
@@ -80,7 +88,8 @@ class AdminViewModel(
         radio: Double,
         tiempoAntiFalsa: Double,
         checkVida: Double,
-        esperarDiasNuevos: Int
+        esperarDiasNuevos: Int,
+        tiempoVidaAlerta: Double
     ) {
         viewModelScope.launch {
             try {
@@ -100,10 +109,25 @@ class AdminViewModel(
                     esperarDiasNuevos = esperarDiasNuevos
                 )
                 networkRepository.crearNetwork(updatedNet)
+                networkRepository.guardarConfiguracionGlobal(tipo, radio, tiempoAntiFalsa, checkVida, esperarDiasNuevos, tiempoVidaAlerta)
                 _network.value = updatedNet
+                _tiempoVidaAlerta.value = tiempoVidaAlerta
                 _statusMessage.value = "¡Configuración de la red guardada con éxito!"
             } catch (e: Exception) {
                 _statusMessage.value = "Error al guardar configuración: ${e.message}"
+            }
+        }
+    }
+
+    fun cambiarEstadoUsuario(uid: String, nuevoEstado: String) {
+        viewModelScope.launch {
+            try {
+                com.google.firebase.database.FirebaseDatabase.getInstance()
+                    .getReference("usuarios").child(uid).child("estado").setValue(nuevoEstado).await()
+                _statusMessage.value = "Estado del usuario actualizado a '$nuevoEstado'"
+                cargarDatos()
+            } catch (e: Exception) {
+                _statusMessage.value = "Error al actualizar estado: ${e.message}"
             }
         }
     }

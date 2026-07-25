@@ -21,6 +21,7 @@ const val MAX_CONTACTOS = 5
 val RELACIONES = listOf("Mamá", "Papá", "Pareja", "Hermano/a", "Otro")
 
 data class ContactsFormState(
+    val id: Int = 0,
     val nombre: String = "",
     val telefono: String = "",
     val relacion: String = RELACIONES.first()
@@ -54,9 +55,17 @@ class ContactsViewModel(
         }
     }
 
-    fun onShowAddSheet(show: Boolean) {
-        if (show) _formState.value = ContactsFormState() // limpia el formulario al abrir
-        _showAddSheet.value = show
+    fun onShowSheet(contacto: ContactoEmergencia?) {
+        if (contacto != null) {
+            _formState.value = ContactsFormState(contacto.id, contacto.nombre, contacto.telefono, contacto.relacion)
+        } else {
+            _formState.value = ContactsFormState()
+        }
+        _showAddSheet.value = true
+    }
+
+    fun onHideSheet() {
+        _showAddSheet.value = false
     }
 
     fun onNombreChange(value: String) {
@@ -73,14 +82,15 @@ class ContactsViewModel(
 
     fun puedeAgregar(): Boolean = _contactos.value.size < MAX_CONTACTOS
 
-    fun onAgregarContacto() {
+    fun onGuardarContacto() {
         val form = _formState.value
         if (form.nombre.isBlank() || form.telefono.length < 10) return
-        if (!puedeAgregar()) return
+        if (form.id == 0 && !puedeAgregar()) return
 
         viewModelScope.launch {
             agregarContactoUseCase(
                 ContactoEmergencia(
+                    id = form.id,
                     usuarioId = usuarioId,
                     nombre = form.nombre,
                     telefono = form.telefono,

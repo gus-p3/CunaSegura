@@ -103,6 +103,9 @@ class PhoneWearableService : WearableListenerService() {
                 val payload = String(messageEvent.data)
                 serviceScope.launch { handleConfigUpdate(payload) }
             }
+            "/cunasegura/config/sync_request" -> {
+                serviceScope.launch { handleConfigSyncRequest() }
+            }
             else -> {
                 Log.w(TAG, "Ruta de mensaje desconocida: ${messageEvent.path}")
             }
@@ -113,6 +116,26 @@ class PhoneWearableService : WearableListenerService() {
         // Payload format: "ACTION=ALARMA_TV|ADDRESS=Ubicación actual"
         Log.d(TAG, "Trigger SOS con payload: $payload")
         showNotification("Tu Señal SOS fue recibida", "Procesando la alerta desde tu reloj...")
+        
+        // Obtener checkVida dinámicamente y enviarlo al reloj
+        try {
+            val configSnap = com.google.firebase.database.FirebaseDatabase.getInstance()
+                .getReference("configuracion_global")
+                .get()
+                .await()
+            val checkVidaMin = configSnap.child("checkVida").getValue(Double::class.java) ?: 2.0
+            val checkVidaMs = (checkVidaMin * 60 * 1000).toLong()
+            
+            val messageClient = com.google.android.gms.wearable.Wearable.getMessageClient(applicationContext)
+            val nodeClient = com.google.android.gms.wearable.Wearable.getNodeClient(applicationContext)
+            val nodes = com.google.android.gms.tasks.Tasks.await(nodeClient.connectedNodes)
+            for (node in nodes) {
+                messageClient.sendMessage(node.id, "/cunasegura/config/checkVida", checkVidaMs.toString().toByteArray())
+            }
+            Log.d(TAG, "Enviado checkVida actualizado al reloj: $checkVidaMs ms")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error enviando checkVida al reloj", e)
+        }
         
         val activarAlertaUseCase = AppModule.provideActivarAlertaUseCase(applicationContext)
         val obtenerContactosUseCase = AppModule.provideObtenerContactosUseCase(applicationContext)
@@ -363,6 +386,53 @@ class PhoneWearableService : WearableListenerService() {
             Log.i(TAG, "Alerta registrada en alerts_log: $alertId")
         } catch (e: Exception) {
             Log.e(TAG, "Error registrando alerta en alerts_log de Firebase", e)
+        }
+    }
+
+    private suspend fun handleConfigSyncRequest() {
+        Log.d(TAG, "Recibida solicitud de sincronización de config del reloj")
+        try {
+            var payload = "MENSAJE_SMS|UBICACION_TIEMPO_REAL|ALARMA_TV|LLAMAR_911"
+            
+            val firebaseUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+            if (firebaseUser != null) {
+                val snap = com.google.firebase.database.FirebaseDatabase.getInstance()
+                    .getReference("configuracion_toques")
+                    .child(firebaseUser.uid)
+                    .get()
+                    .await()
+                if (snap.exists()) {
+                    val t1 = snap.child("1").getValue(String::class.java) ?: "MENSAJE_SMS"
+                    val t2 = snap.child("2").getValue(String::class.java) ?: "UBICACION_TIEMPO_REAL"
+                    val t3 = snap.child("3").getValue(String::class.java) ?: "ALARMA_TV"
+                    val t4 = snap.child("4").getValue(String::class.java) ?: "LLAMAR_911"
+                    payload = "$t1|$t2|$t3|$t4"
+                } else {
+                    val db = mx.edu.utng.cunasegura.data.local.db.AppDatabase.getInstance(applicationContext)
+                    val currentUser = db.usuarioDao().obtenerUsuarioActual()
+                    val userId = currentUser?.id ?: 1
+                    val configs = db.configuracionToqueDao().obtenerPorUsuario(userId)
+                    if (configs.isNotEmpty()) {
+                        val map = configs.associate { it.cantidadToques to it.tipoAccion }
+                        val t1 = map[1] ?: "MENSAJE_SMS"
+                        val t2 = map[2] ?: "UBICACION_TIEMPO_REAL"
+                        val t3 = map[3] ?: "ALARMA_TV"
+                        val t4 = map[4] ?: "LLAMAR_911"
+                        payload = "$t1|$t2|$t3|$t4"
+                    }
+                }
+            }
+            
+            val messageClient = com.google.android.gms.wearable.Wearable.getMessageClient(applicationContext)
+            val nodeClient = com.google.android.gms.wearable.Wearable.getNodeClient(applicationContext)
+            val nodes = com.google.android.gms.tasks.Tasks.await(nodeClient.connectedNodes)
+            val data = payload.toByteArray()
+            for (node in nodes) {
+                messageClient.sendMessage(node.id, "/cunasegura/config/update", data)
+            }
+            Log.d(TAG, "Configuración enviada al reloj en respuesta a sync_request: $payload")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error en handleConfigSyncRequest", e)
         }
     }
 }

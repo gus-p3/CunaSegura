@@ -68,6 +68,15 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
     private val firebaseListener = FirebaseAlertListener()
     private var mediaPlayer: android.media.MediaPlayer? = null
 
+    private var netInfoListenerRef: com.google.firebase.database.DatabaseReference? = null
+    private var netInfoListener: ValueEventListener? = null
+
+    private var titularListenerRef: com.google.firebase.database.DatabaseReference? = null
+    private var titularListener: ValueEventListener? = null
+
+    private var vecinosListenerRef: com.google.firebase.database.DatabaseReference? = null
+    private var vecinosListener: ValueEventListener? = null
+
     init {
         // Cargar colores personalizados guardados previamente
         cargarColores()
@@ -161,19 +170,25 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
                     val prefs = getApplication<Application>().getSharedPreferences("CunaSeguraTV", Context.MODE_PRIVATE)
                     val tvId = prefs.getString("tvId", null)
                     if (tvId != null && tvId == vinculacion.tvId) {
-                        simularVinculacionExitosa(vinculacion.networkId)
+                        simularVinculacionExitosa(vinculacion.networkId, null)
                     }
                 }
             }
         }
     }
 
-    private fun escucharVecinosYRedFirebase(networkId: String) {
+    private fun escucharVecinosYRedFirebase(networkId: String, linkedBy: String?) {
         val db = FirebaseDatabase.getInstance()
 
+        // Limpiar listeners anteriores para evitar conflictos fantasma
+        netInfoListenerRef?.let { ref -> netInfoListener?.let { l -> ref.removeEventListener(l) } }
+        titularListenerRef?.let { ref -> titularListener?.let { l -> ref.removeEventListener(l) } }
+        vecinosListenerRef?.let { ref -> vecinosListener?.let { l -> ref.removeEventListener(l) } }
+
         // 1. Escuchar la información de la red si existe en /networks
-        db.getReference("networks").child(networkId)
-            .addValueEventListener(object : ValueEventListener {
+        val netRef = db.getReference("networks").child(networkId)
+        netInfoListenerRef = netRef
+        netInfoListener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
                         val netName = snapshot.child("nombre").getValue(String::class.java) ?: "Red Vecinal"
@@ -189,11 +204,14 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
                     }
                 }
                 override fun onCancelled(error: DatabaseError) {}
-            })
+            }
+        netRef.addValueEventListener(netInfoListener!!)
 
         // 2. Escuchar usuario vinculador o titular de la red
-        db.getReference("usuarios").child(networkId)
-            .addValueEventListener(object : ValueEventListener {
+        val userToListen = if (!linkedBy.isNullOrEmpty()) linkedBy else networkId
+        val titRef = db.getReference("usuarios").child(userToListen)
+        titularListenerRef = titRef
+        titularListener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
                         val nombre = snapshot.child("nombre").getValue(String::class.java) ?: "Vecino"
@@ -208,11 +226,13 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
                     }
                 }
                 override fun onCancelled(error: DatabaseError) {}
-            })
+            }
+        titRef.addValueEventListener(titularListener!!)
 
         // 3. Escuchar a todos los vecinos pertenecientes a esta red en /usuarios
-        db.getReference("usuarios")
-            .addValueEventListener(object : ValueEventListener {
+        val vecRef = db.getReference("usuarios")
+        vecinosListenerRef = vecRef
+        vecinosListener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val locations = mutableListOf<VecinoLocation>()
                     val infoList = mutableListOf<VecinoInfo>()
@@ -234,8 +254,11 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
                             if (lat != 0.0 && lon != 0.0) {
                                 locations.add(VecinoLocation(userId, nombre, lat, lon))
                             }
-                            // Si el titular no ha sido determinado o este vecino es el creador/admin de la red
-                            if (titularNombre.isEmpty() || titularNombre == "Vecino" || userId == networkId || rol == "admin_global" || rol == "admin") {
+                            // Priorizar al usuario que vinculó la TV
+                            if (!linkedBy.isNullOrEmpty() && userId == linkedBy) {
+                                titularNombre = nombre
+                                titularCorreo = correo
+                            } else if (linkedBy.isNullOrEmpty() && (titularNombre.isEmpty() || titularNombre == "Vecino" || userId == networkId)) {
                                 titularNombre = nombre
                                 titularCorreo = correo
                             }
@@ -251,7 +274,8 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
                     }
                 }
                 override fun onCancelled(error: DatabaseError) {}
-            })
+            }
+        vecRef.addValueEventListener(vecinosListener!!)
     }
 
     private fun reproducirAlarma() {
@@ -313,7 +337,7 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
                     val linkedBy = snapshot.child("linkedBy").getValue(String::class.java)
 
                     if (!networkId.isNullOrEmpty()) {
-                        simularVinculacionExitosa(networkId)
+                        simularVinculacionExitosa(networkId, linkedBy)
                     }
 
                     if (!linkedBy.isNullOrEmpty()) {
@@ -365,7 +389,7 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
                 if (!newNetworkId.isNullOrEmpty() && newNetworkId != _state.value.networkId) {
                     android.util.Log.d("TvMonitorViewModel", "🔔 La TV detectó cambio de red vecinal del usuario $linkedByUid a: $newNetworkId")
                     FirebaseDatabase.getInstance().getReference("tvs").child(tvId).child("networkId").setValue(newNetworkId)
-                    simularVinculacionExitosa(newNetworkId)
+                    simularVinculacionExitosa(newNetworkId, linkedByUid)
                 }
             }
             override fun onCancelled(error: DatabaseError) {}
@@ -373,13 +397,14 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
         userNetRef.addValueEventListener(usuarioListener!!)
     }
 
-    fun simularVinculacionExitosa(networkId: String = "RED-VECINAL-123") {
+    fun simularVinculacionExitosa(networkId: String = "RED-VECINAL-123", linkedBy: String? = null) {
         mqttSubscriber.setNetworkId(networkId)
-        escucharVecinosYRedFirebase(networkId)
+        escucharVecinosYRedFirebase(networkId, linkedBy)
         _state.update { 
             it.copy(
                 isVinculada = true,
-                networkId = networkId
+                networkId = networkId,
+                usuarioId = linkedBy ?: it.usuarioId
             )
         }
     }

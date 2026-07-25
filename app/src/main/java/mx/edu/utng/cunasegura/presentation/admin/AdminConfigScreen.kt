@@ -40,6 +40,7 @@ fun AdminConfigScreen() {
     var tiempoAntiFalsa by remember { mutableFloatStateOf(5f) }
     var checkVida by remember { mutableFloatStateOf(2f) }
     var esperarDiasNuevos by remember { mutableFloatStateOf(0f) }
+    var tiempoVidaAlerta by remember { mutableFloatStateOf(720f) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -53,6 +54,11 @@ fun AdminConfigScreen() {
             checkVida = it.checkVida.toFloat()
             esperarDiasNuevos = it.esperarDiasNuevos.toFloat()
         }
+    }
+    
+    val globalVidaAlerta by viewModel.tiempoVidaAlerta.collectAsState()
+    LaunchedEffect(globalVidaAlerta) {
+        tiempoVidaAlerta = globalVidaAlerta.toFloat()
     }
 
     // Show status messages in Snackbar
@@ -235,6 +241,40 @@ fun AdminConfigScreen() {
                             modifier = Modifier.padding(top = 4.dp)
                         )
                     }
+                    
+                    HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant)
+
+                    // Tiempo de vida de la alerta
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.HourglassEmpty, contentDescription = null, tint = AzulCunaSegura, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Tiempo vida de alerta (Global)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                            }
+                            Text("${tiempoVidaAlerta.toInt()} min", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AzulCunaSegura)
+                        }
+                        Slider(
+                            value = tiempoVidaAlerta,
+                            onValueChange = { tiempoVidaAlerta = it },
+                            valueRange = 1f..1440f,
+                            colors = SliderDefaults.colors(
+                                thumbColor = AzulCunaSegura,
+                                activeTrackColor = AzulCunaSegura,
+                                inactiveTrackColor = AzulCunaSegura.copy(alpha = 0.2f)
+                            )
+                        )
+                        Text(
+                            "Oculta del mapa las alertas automáticamente una vez transcurrido este tiempo (1 a 1440 minutos).",
+                            fontSize = 11.sp,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
                 }
             }
 
@@ -247,7 +287,8 @@ fun AdminConfigScreen() {
                         radio = radioMaximo.toDouble(),
                         tiempoAntiFalsa = tiempoAntiFalsa.toDouble(),
                         checkVida = checkVida.toDouble(),
-                        esperarDiasNuevos = esperarDiasNuevos.toInt()
+                        esperarDiasNuevos = esperarDiasNuevos.toInt(),
+                        tiempoVidaAlerta = tiempoVidaAlerta.toDouble()
                     )
                 },
                 modifier = Modifier

@@ -40,6 +40,9 @@ interface IUsuarioRepository {
     /** Retorna el usuario de la sesión activa en este dispositivo, o null si no hay ninguno. */
     suspend fun obtenerUsuarioActual(): Usuario?
 
+    /** Actualiza el perfil del usuario actual (nombre, teléfono y opcionalmente contraseña en Firebase Auth). */
+    suspend fun actualizarPerfilUsuario(nombre: String, telefono: String, nuevaPassword: String?): Result<Unit>
+
     /** Elimina todos los usuarios locales para asegurar una sesión única. */
     suspend fun limpiarSesionLocal()
 }

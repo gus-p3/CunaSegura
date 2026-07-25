@@ -90,7 +90,12 @@ fun AdminMembersScreen() {
                         }
                     } else {
                         items(vecinos) { usuario ->
-                            MiembroCard(usuario = usuario)
+                            MiembroCard(
+                                usuario = usuario,
+                                onToggleEstado = { nuevoEstado ->
+                                    viewModel.cambiarEstadoUsuario(usuario.uid, nuevoEstado)
+                                }
+                            )
                         }
                     }
                 }
@@ -104,8 +109,13 @@ fun AdminMembersScreen() {
 }
 
 @Composable
-private fun MiembroCard(usuario: Usuario) {
+private fun MiembroCard(
+    usuario: Usuario,
+    onToggleEstado: (String) -> Unit
+) {
     val iniciales = usuario.nombre.trim().split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.first().uppercase() }
+    val esActivo = usuario.estado == "activo"
+
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
@@ -116,7 +126,7 @@ private fun MiembroCard(usuario: Usuario) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(44.dp).clip(CircleShape).background(AzulCunaSegura),
+                modifier = Modifier.size(44.dp).clip(CircleShape).background(if (esActivo) AzulCunaSegura else Color.Gray),
                 contentAlignment = Alignment.Center
             ) {
                 Text(iniciales, color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -127,17 +137,31 @@ private fun MiembroCard(usuario: Usuario) {
                 Text("📞 ${usuario.telefono}", fontSize = 12.sp, color = Color.Gray)
                 if (usuario.correo.isNotBlank()) Text("✉️ ${usuario.correo}", fontSize = 11.sp, color = Color.Gray)
             }
-            Box(
-                modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(
-                    if (usuario.estado == "activo") androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer else androidx.compose.material3.MaterialTheme.colorScheme.errorContainer
-                ).padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = usuario.estado.replaceFirstChar { it.uppercase() },
-                    fontSize = 11.sp,
-                    color = if (usuario.estado == "activo") VerdeAdmin else RojoAdmin,
-                    fontWeight = FontWeight.Bold
-                )
+            Column(horizontalAlignment = Alignment.End) {
+                Box(
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(
+                        if (esActivo) androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer else androidx.compose.material3.MaterialTheme.colorScheme.errorContainer
+                    ).padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = usuario.estado.replaceFirstChar { it.uppercase() },
+                        fontSize = 11.sp,
+                        color = if (esActivo) VerdeAdmin else RojoAdmin,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                TextButton(
+                    onClick = { onToggleEstado(if (esActivo) "bloqueado" else "activo") },
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                ) {
+                    Text(
+                        text = if (esActivo) "Bloquear" else "Activar",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (esActivo) RojoAdmin else VerdeAdmin
+                    )
+                }
             }
         }
     }

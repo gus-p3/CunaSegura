@@ -18,11 +18,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.material.icons.filled.Shield
 import mx.edu.utng.cunasegura.presentation.contacts.ContactsScreen
 import mx.edu.utng.cunasegura.presentation.devices.DevicesScreen
 import mx.edu.utng.cunasegura.presentation.home.HomeScreen
 import mx.edu.utng.cunasegura.presentation.map.CommunityMapScreen
 import mx.edu.utng.cunasegura.presentation.navigation.Screen
+import mx.edu.utng.cunasegura.presentation.networks.NetworksScreen
 import mx.edu.utng.cunasegura.presentation.profile.UserProfileScreen
 
 @Composable
@@ -60,6 +62,24 @@ fun MainUserScreen(
                     )
                 )
                 NavigationBarItem(
+                    selected = currentRoute == Screen.Networks.route,
+                    onClick = {
+                        if (currentRoute != Screen.Networks.route) {
+                            mainNavController.navigate(Screen.Networks.route) {
+                                popUpTo(mainNavController.graph.startDestinationId)
+                                launchSingleTop = true
+                            }
+                        }
+                    },
+                    icon = { Icon(Icons.Default.Shield, contentDescription = "Red Vecinal") },
+                    label = { Text("Red Vecinal") },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = AzulCunaSegura,
+                        selectedTextColor = AzulCunaSegura,
+                        indicatorColor = AzulCunaSegura.copy(alpha = 0.1f)
+                    )
+                )
+                NavigationBarItem(
                     selected = currentRoute == Screen.Contacts.route,
                     onClick = {
                         if (currentRoute != Screen.Contacts.route) {
@@ -71,24 +91,6 @@ fun MainUserScreen(
                     },
                     icon = { Icon(Icons.Default.Call, contentDescription = "Contactos") },
                     label = { Text("Contactos") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = AzulCunaSegura,
-                        selectedTextColor = AzulCunaSegura,
-                        indicatorColor = AzulCunaSegura.copy(alpha = 0.1f)
-                    )
-                )
-                NavigationBarItem(
-                    selected = currentRoute == Screen.Devices.route,
-                    onClick = {
-                        if (currentRoute != Screen.Devices.route) {
-                            mainNavController.navigate(Screen.Devices.route) {
-                                popUpTo(mainNavController.graph.startDestinationId)
-                                launchSingleTop = true
-                            }
-                        }
-                    },
-                    icon = { Icon(Icons.Default.Settings, contentDescription = "Dispositivos") },
-                    label = { Text("Dispositivos") },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = AzulCunaSegura,
                         selectedTextColor = AzulCunaSegura,
@@ -146,6 +148,16 @@ fun MainUserScreen(
                     }
                 )
             }
+            composable(Screen.Networks.route) {
+                NetworksScreen(
+                    onBack = {
+                        mainNavController.navigate(Screen.Home.route) {
+                            popUpTo(mainNavController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
             composable(Screen.Contacts.route) {
                 ContactsScreen()
             }
@@ -166,11 +178,19 @@ fun MainUserScreen(
                 UserProfileScreen(
                     onLogout = {
                         rootNavController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Home.route) { inclusive = true }
+                            popUpTo(0) { inclusive = true }
                         }
                     },
                     onNavigateToNetworks = {
-                        rootNavController.navigate(Screen.Networks.route)
+                        mainNavController.navigate(Screen.Networks.route) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onNavigateToWatchConfig = {
+                        rootNavController.navigate(Screen.WatchConfig.route)
+                    },
+                    onNavigateToTvConfig = {
+                        rootNavController.navigate(Screen.TvConfig.route)
                     }
                 )
             }
