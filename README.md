@@ -16,6 +16,14 @@ Explora la documentación detallada de cada módulo, con capturas de pantalla, e
 | *El centro de operaciones y configuración del sistema.* | *La estación de monitoreo y despliegue del hogar.* | *El disparador físico y sensor táctico.* |
 
 > 👉 **[📸 Acceder a la Galería Interactiva de Capturas (Wear OS)](docs/CAPTURAS_WEAROS.md)**
+>
+---
+## Aprobacion del Proyecto
+
+| 📄 Documento Adicional | 🎥 Video Demostrativo |
+| :---: | :---: |
+| [**Carta Validación (PDF)**](docs/CartaValidacion_Beneficiario_DDI_UTNG.pdf) | [**Ver Video en YouTube**](https://youtu.be/28t9ltYhqFo) |
+| *Carta de Validación* | *Video del Aprobación de Proyecto* |
 
 ---
 
