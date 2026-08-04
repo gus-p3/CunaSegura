@@ -58,11 +58,11 @@ class AlertaRepositoryImpl(
                 val userSnap = FirebaseDatabase.getInstance().getReference("usuarios")
                     .child(firebaseUser.uid).get().await()
                 if (userSnap.exists()) {
-                    if (nombreFinal.isBlank() || nombreFinal == "Vecino") {
-                        nombreFinal = userSnap.child("nombre").getValue(String::class.java)
-                            ?: firebaseUser.displayName
-                            ?: firebaseUser.email?.substringBefore("@")
-                            ?: "Vecino"
+                    val realName = userSnap.child("nombre").getValue(String::class.java)
+                        ?: firebaseUser.displayName
+                        ?: firebaseUser.email?.substringBefore("@")
+                    if (!realName.isNullOrBlank()) {
+                        nombreFinal = realName
                     }
                     if (networkId.isEmpty()) {
                         networkId = userSnap.child("networkId").getValue(String::class.java) ?: firebaseUser.uid

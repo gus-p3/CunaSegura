@@ -220,7 +220,7 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
                             it.copy(
                                 usuarioNombre = nombre,
                                 usuarioCorreo = correo,
-                                usuarioId = networkId
+                                usuarioId = userToListen
                             ) 
                         }
                     }
@@ -269,7 +269,8 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
                             vecinosLocations = locations,
                             vecinosList = infoList,
                             usuarioNombre = if (titularNombre.isNotBlank()) titularNombre else it.usuarioNombre,
-                            usuarioCorreo = if (titularCorreo.isNotBlank()) titularCorreo else it.usuarioCorreo
+                            usuarioCorreo = if (titularCorreo.isNotBlank()) titularCorreo else it.usuarioCorreo,
+                            usuarioId = userToListen
                         ) 
                     }
                 }

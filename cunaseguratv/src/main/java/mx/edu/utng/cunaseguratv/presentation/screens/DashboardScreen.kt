@@ -353,10 +353,22 @@ fun DashboardScreen(
             }
 
             // --- MAPA PRINCIPAL (OSMDroid + OpenStreetMap MAPNIK) ---
+            val activeAlert = state.alertasRecientes.firstOrNull { it.latitud != 0.0 && it.estado == "activa" }
+            val linkedUserLoc = state.vecinosLocations.find { it.id == state.usuarioId && it.lat != 0.0 }
             val firstVecino = state.vecinosLocations.firstOrNull { it.lat != 0.0 }
-            LaunchedEffect(firstVecino) {
-                if (firstVecino != null) {
-                    mapView.controller.animateTo(GeoPoint(firstVecino.lat, firstVecino.lon))
+
+            val initialTarget = remember(activeAlert, linkedUserLoc, firstVecino) {
+                when {
+                    activeAlert != null -> GeoPoint(activeAlert.latitud, activeAlert.longitud)
+                    linkedUserLoc != null -> GeoPoint(linkedUserLoc.lat, linkedUserLoc.lon)
+                    firstVecino != null -> GeoPoint(firstVecino.lat, firstVecino.lon)
+                    else -> null
+                }
+            }
+
+            LaunchedEffect(initialTarget) {
+                if (initialTarget != null) {
+                    mapView.controller.animateTo(initialTarget)
                 }
             }
 
@@ -461,10 +473,17 @@ fun DashboardScreen(
 
                             Button(
                                 onClick = {
-                                    val firstVecino = state.vecinosLocations.firstOrNull { it.lat != 0.0 }
-                                    val target = if (firstVecino != null) GeoPoint(firstVecino.lat, firstVecino.lon) else GeoPoint(21.1561, -100.9325)
-                                    mapView.controller.animateTo(target)
-                                    mapView.controller.setZoom(15.0)
+                                     val activeAlert = state.alertasRecientes.firstOrNull { it.latitud != 0.0 && it.estado == "activa" }
+                                     val linkedUserLoc = state.vecinosLocations.find { it.id == state.usuarioId && it.lat != 0.0 }
+                                     val firstVecino = state.vecinosLocations.firstOrNull { it.lat != 0.0 }
+                                     val target = when {
+                                         activeAlert != null -> GeoPoint(activeAlert.latitud, activeAlert.longitud)
+                                         linkedUserLoc != null -> GeoPoint(linkedUserLoc.lat, linkedUserLoc.lon)
+                                         firstVecino != null -> GeoPoint(firstVecino.lat, firstVecino.lon)
+                                         else -> GeoPoint(21.1561, -100.9325)
+                                     }
+                                     mapView.controller.animateTo(target)
+                                     mapView.controller.setZoom(15.0)
                                 },
                                 colors = ButtonDefaults.colors(containerColor = MaterialTheme.colorScheme.tertiary),
                                 modifier = Modifier.size(width = 44.dp, height = 32.dp),

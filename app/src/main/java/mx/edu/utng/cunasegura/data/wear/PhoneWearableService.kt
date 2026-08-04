@@ -231,11 +231,11 @@ class PhoneWearableService : WearableListenerService() {
                 var usuarioId = 1
                 var nombreUsuario = "Vecino"
                 try {
-                    val dbInstance = mx.edu.utng.cunasegura.data.local.db.AppDatabase.getInstance(applicationContext)
-                    val currentUser = dbInstance.usuarioDao().obtenerUsuarioActual()
+                    val obtenerUsuarioActualUseCase = AppModule.provideObtenerUsuarioActualUseCase(applicationContext)
+                    val currentUser = obtenerUsuarioActualUseCase()
                     if (currentUser != null) {
-                        usuarioId = currentUser.id
-                        nombreUsuario = currentUser.nombre
+                        usuarioId = if (currentUser.id != 0) currentUser.id else (currentUser.uid.hashCode() and 0x7FFFFFFF)
+                        nombreUsuario = currentUser.nombre.ifBlank { "Vecino" }
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error fetching user info", e)
@@ -271,11 +271,11 @@ class PhoneWearableService : WearableListenerService() {
                 var tvUsuarioId = 1
                 var tvNombreUsuario = "Vecino"
                 try {
-                    val dbInstance = mx.edu.utng.cunasegura.data.local.db.AppDatabase.getInstance(applicationContext)
-                    val currentUser = dbInstance.usuarioDao().obtenerUsuarioActual()
+                    val obtenerUsuarioActualUseCase = AppModule.provideObtenerUsuarioActualUseCase(applicationContext)
+                    val currentUser = obtenerUsuarioActualUseCase()
                     if (currentUser != null) {
-                        tvUsuarioId = currentUser.id
-                        tvNombreUsuario = currentUser.nombre
+                        tvUsuarioId = if (currentUser.id != 0) currentUser.id else (currentUser.uid.hashCode() and 0x7FFFFFFF)
+                        tvNombreUsuario = currentUser.nombre.ifBlank { "Vecino" }
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error fetching user info for TV alert", e)
@@ -301,8 +301,9 @@ class PhoneWearableService : WearableListenerService() {
     private suspend fun handleSosCancel() {
         try {
             val dbInstance = mx.edu.utng.cunasegura.data.local.db.AppDatabase.getInstance(applicationContext)
-            val currentUser = dbInstance.usuarioDao().obtenerUsuarioActual()
-            val userId = currentUser?.id ?: 1
+            val obtenerUsuarioActualUseCase = AppModule.provideObtenerUsuarioActualUseCase(applicationContext)
+            val currentUser = obtenerUsuarioActualUseCase()
+            val userId = if (currentUser != null && currentUser.id != 0) currentUser.id else (currentUser?.uid?.hashCode()?.and(0x7FFFFFFF) ?: 1)
             
             val alertaDao = dbInstance.alertaDao()
             val alertaActiva = alertaDao.buscarAlertaActivaPorUsuario(userId)
