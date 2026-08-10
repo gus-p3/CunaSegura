@@ -188,7 +188,11 @@ class WatchViewModel(
                     startLifeCheckTimer()
                     startLocationTracking()
                 }
-                result.onFailure {
+                result.onFailure { e ->
+                    Log.e("WatchViewModel", "❌ Error al enviar alerta SOS desde el reloj: ${e.message}")
+                    kotlinx.coroutines.withContext(Dispatchers.Main) {
+                        android.widget.Toast.makeText(context, "⚠️ Fallo al enviar: ${e.message ?: "Sin conexión con el teléfono"}", android.widget.Toast.LENGTH_LONG).show()
+                    }
                     _state.update { it.copy(phase = AlertPhase.IDLE, activeActionLabel = "", activeActionName = "") }
                 }
             }
@@ -257,7 +261,11 @@ class WatchViewModel(
                     startLifeCheckTimer()
                     startLocationTracking()
                 }
-                result.onFailure {
+                result.onFailure { e ->
+                    Log.e("WatchViewModel", "❌ Error al enviar alerta SOS desde el reloj: ${e.message}")
+                    kotlinx.coroutines.withContext(Dispatchers.Main) {
+                        android.widget.Toast.makeText(context, "⚠️ Fallo al enviar: ${e.message ?: "Sin conexión con el teléfono"}", android.widget.Toast.LENGTH_LONG).show()
+                    }
                     _state.update { it.copy(phase = AlertPhase.IDLE, activeActionLabel = "", activeActionName = "") }
                 }
             }
@@ -321,7 +329,11 @@ class WatchViewModel(
                     startLifeCheckTimer()
                     startLocationTracking()
                 }
-                result.onFailure {
+                result.onFailure { e ->
+                    Log.e("WatchViewModel", "❌ Error al enviar alerta SOS desde el reloj: ${e.message}")
+                    kotlinx.coroutines.withContext(Dispatchers.Main) {
+                        android.widget.Toast.makeText(context, "⚠️ Fallo al enviar: ${e.message ?: "Sin conexión con el teléfono"}", android.widget.Toast.LENGTH_LONG).show()
+                    }
                     _state.update { it.copy(phase = AlertPhase.IDLE, activeActionLabel = "", activeActionName = "") }
                 }
             }
