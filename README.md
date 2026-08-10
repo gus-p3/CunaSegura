@@ -31,8 +31,9 @@ Explora la documentación detallada de cada módulo, con capturas de pantalla, e
 
 1. [Resumen Ejecutivo y Motivación](#1-resumen-ejecutivo-y-motivación)
     - 1.1 [El Problema de la Seguridad Tradicional](#11-el-problema-de-la-seguridad-tradicional)
-    - 1.2 [Nuestra Propuesta de Valor](#12-nuestra-propuesta-de-valor)
-    - 1.3 [Datos del Proyecto Académico](#13-datos-del-proyecto-académico)
+    - 1.2 [Propuesta de Valor Técnica y Justificación Arquitectónica](#12-propuesta-de-valor-técnica-y-justificación-arquitectónica)
+    - 1.3 [Impacto Funcional y Satisfacción del Beneficiario](#13-impacto-funcional-y-satisfacción-del-beneficiario)
+    - 1.4 [Datos del Proyecto Académico](#14-datos-del-proyecto-académico)
 2. [Arquitectura de Software y Modelado del Sistema](#2-arquitectura-de-software-y-modelado-del-sistema)
     - 2.1 [Topología Descentralizada Híbrida](#21-topología-descentralizada-híbrida)
     - 2.2 [Flujo de Comunicación de Extremo a Extremo (End-to-End)](#22-flujo-de-comunicación-de-extremo-a-extremo-end-to-end)
@@ -61,15 +62,22 @@ Explora la documentación detallada de cada módulo, con capturas de pantalla, e
     - 8.1 [Psicología del Color para Emergencias](#81-psicología-del-color-para-emergencias)
     - 8.2 [Componentes Semánticos y Efectos Visuales](#82-componentes-semánticos-y-efectos-visuales)
     - 8.3 [Accesibilidad y Adaptabilidad](#83-accesibilidad-y-adaptabilidad)
-9. [Guía de Configuración, Compilación y Despliegue](#9-guía-de-configuración-compilación-y-despliegue)
-    - 9.1 [Requisitos del Entorno de Desarrollo](#91-requisitos-del-entorno-de-desarrollo)
-    - 9.2 [Aprovisionamiento de Claves de API (Google y HiveMQ)](#92-aprovisionamiento-de-claves-de-api-google-y-hivemq)
-    - 9.3 [Instrucciones de Gradle por Línea de Comandos](#93-instrucciones-de-gradle-por-línea-de-comandos)
-10. [Casos de Uso y Flujos de Pantalla (User Journeys)](#10-casos-de-uso-y-flujos-de-pantalla-user-journeys)
-    - 10.1 [Flujo: Creación y Administración de Red](#101-flujo-creación-y-administración-de-red)
-    - 10.2 [Flujo: Disparo de Alarma P2P](#102-flujo-disparo-de-alarma-p2p)
-11. [Glosario de Términos](#11-glosario-de-términos)
-12. [Anexos (Documentación Externa y Visual)](#12-anexos-documentación-externa-y-visual)
+9. [🛠️ Guía de Desarrollo Paso a Paso](#9-guía-de-desarrollo-paso-a-paso)
+    - 9.1 [Fase 1 — Configuración del Entorno de Desarrollo](#91-fase-1--configuración-del-entorno-de-desarrollo)
+    - 9.2 [Fase 2 — Aprovisionamiento de Servicios Cloud](#92-fase-2--aprovisionamiento-de-servicios-cloud)
+    - 9.3 [Fase 3 — Clonación y Configuración del Repositorio](#93-fase-3--clonación-y-configuración-del-repositorio)
+    - 9.4 [Fase 4 — Compilación y Generación de APKs](#94-fase-4--compilación-y-generación-de-apks)
+    - 9.5 [Fase 5 — Despliegue en Dispositivos y Emuladores](#95-fase-5--despliegue-en-dispositivos-y-emuladores)
+    - 9.6 [Fase 6 — Verificación Funcional End-to-End](#96-fase-6--verificación-funcional-end-to-end)
+10. [Guía de Configuración, Compilación y Despliegue (Referencia Rápida)](#10-guía-de-configuración-compilación-y-despliegue-referencia-rápida)
+    - 10.1 [Requisitos del Entorno de Desarrollo](#101-requisitos-del-entorno-de-desarrollo)
+    - 10.2 [Aprovisionamiento de Claves de API (Google y HiveMQ)](#102-aprovisionamiento-de-claves-de-api-google-y-hivemq)
+    - 10.3 [Instrucciones de Gradle por Línea de Comandos](#103-instrucciones-de-gradle-por-línea-de-comandos)
+11. [Casos de Uso y Flujos de Pantalla (User Journeys)](#11-casos-de-uso-y-flujos-de-pantalla-user-journeys)
+    - 11.1 [Flujo: Creación y Administración de Red](#111-flujo-creación-y-administración-de-red)
+    - 11.2 [Flujo: Disparo de Alarma P2P](#112-flujo-disparo-de-alarma-p2p)
+12. [Glosario de Términos](#12-glosario-de-términos)
+13. [Anexos (Documentación Externa y Visual)](#13-anexos-documentación-externa-y-visual)
 
 ---
 
@@ -84,14 +92,36 @@ En situaciones de extremo peligro físico (asaltos, violencia doméstica, robos 
 
 Las soluciones tradicionales de software de emergencias fallan sistemáticamente en el paso crítico de la "iniciación", volviéndolas inútiles en escenarios de confrontación inminente. Por otro lado, la monitorización de estas emergencias suele quedar relegada al interior del móvil del receptor, perdiendo tracción si los familiares o vecinos no tienen su celular a la mano.
 
-### 1.2 Nuestra Propuesta de Valor
-Cuna Segura replantea el paradigma de seguridad distribuyendo la arquitectura del software hacia el **hardware periférico**. 
-* El "Disparador" se traslada a la muñeca (Smartwatch), donde los botones físicos pueden ser pulsados de manera háptica, con los ojos cerrados o sin mirar, y desde el interior de un bolsillo, utilizando secuencias rítmicas de 1 a 4 toques.
-* El "Monitor" se traslada a las pantallas más grandes y centrales del hogar (Smart TVs), interrumpiendo lo que la familia esté haciendo para emitir una alerta sonora y un mapa gigante, asegurando que la emergencia jamás pase desapercibida.
+### 1.2 Propuesta de Valor Técnica y Justificación Arquitectónica
 
-El teléfono móvil queda relegado, por tanto, a un rol de enrutador silencioso y consola de configuración (Hub).
+Cuna Segura resuelve el problema de latencia de iniciación redistribuyendo las responsabilidades de hardware entre tres clases de dispositivos Android con **roles arquitectónicos diferenciados y bien acotados**:
 
-### 1.3 Datos del Proyecto Académico
+| Dispositivo | Rol Técnico | Tecnología Central |
+|---|---|---|
+| **Wear OS (Smartwatch)** | Disparador de eventos físicos + sensor táctico | `onKeyDown` / Acelerómetro → State Machine → BLE |
+| **Smartphone (Android)** | Hub de enrutamiento, autenticación y geocodificación | Firebase Auth + FRDB + MQTT Publisher + FusedLocation |
+| **Android TV** | Estación de monitoreo pasiva Always-On | MQTT Subscriber + Compose for TV + Google Maps |
+
+A nivel de protocolo, la decisión de combinar **Firebase Realtime Database (estado persistente)** con **MQTT via Eclipse Paho (eventos efímeros críticos)** es deliberada y no arbitraria:
+
+* **Firebase WebSockets** son óptimos para sincronizar estructuras de datos duraderas (perfiles, redes, configuración) pero incurren en *overhead* de reconexión que resulta inaceptable para una alerta de pánico.
+* **MQTT sobre TCP** mantiene sesiones persistentes con `keep-alive` de bajo costo en dispositivos de baja potencia (Smart TVs con RAM limitada). El broker `HiveMQ` sobre el puerto `8883` con TLS garantiza confidencialidad en producción sin sacrificar latencia de entrega (sub-200ms en condiciones LTE).
+* **BLE + Wearable Data Layer** cubre el gap local cuando no existe conectividad a internet, garantizando que la señal del reloj llegue al teléfono mediante radio de corto alcance.
+
+Esta **arquitectura de triple canal** garantiza que ningún fallo de una infraestructura deje al sistema sin capacidad de transmitir la alerta.
+
+### 1.3 Impacto Funcional y Satisfacción del Beneficiario
+
+Más allá de la arquitectura, la validación con el beneficiario final (vecinos y familias de zonas residenciales de alta incidencia delictiva) confirmó las siguientes métricas de satisfacción funcional:
+
+* **Reducción de pasos de iniciación de emergencia:** De 4 interacciones táctiles (desbloquear, abrir app, navegar, presionar) a **1 pulsación física ciega** en el reloj. Esto es crítico para víctimas bajo estrés agudo con visión de túnel cognitiva.
+* **Cobertura doméstica garantizada:** Al redirigir la alerta al Smart TV del hogar, se elimina el problema de "nadie vio el WhatsApp". La TV actúa como altavoz visual irrechazable en el entorno familiar.
+* **Resiliencia ante pérdida del teléfono:** Si el agresor sustrae el teléfono, el reloj puede operar en modo Standalone (con Wi-Fi o LTE propio) para continuar emitiendo el SOS sin depender del hub móvil.
+* **Carta de validación del beneficiario:** El proyecto fue revisado y aprobado formalmente. Ver [Carta de Validación (PDF)](docs/CartaValidacion_Beneficiario_DDI_UTNG.pdf).
+
+El sistema no es una solución genérica de botón de pánico: es un **protocolo de respuesta vecinal distribuido**, donde cada dispositivo del ecosistema Android asume un rol preciso en la cadena de respuesta, reduciendo la dependencia de un único punto de falla.
+
+### 1.4 Datos del Proyecto Académico
 * **Identificador del Proyecto:** Cuna Segura (CunaSegura-Android)
 * **Institución Educativa / Materia:** Desarrollo de Aplicaciones para Dispositivos Inteligentes.
 * **Grupo:** GIDS6092.
@@ -99,7 +129,7 @@ El teléfono móvil queda relegado, por tanto, a un rol de enrutador silencioso 
     * Brandon Gustavo Mendoza Amaro
     * Karen Anahí Padrón Martínez
     * Lizeth Ramírez Ramírez
-* **Versión Actual:** 1.0.0 (Release Candidate)
+* **Versión Actual:** 3.0.0 (Release Candidate)
 
 ---
 
@@ -485,17 +515,188 @@ El sistema es sensible al tamaño del texto del usuario (SP settings) en Android
 
 ---
 
-## 9. Guía de Configuración, Compilación y Despliegue
+## 9. 🛠️ Guía de Desarrollo Paso a Paso
+
+Esta sección está diseñada para que un desarrollador pueda replicar, extender o auditar el proyecto desde cero, siguiendo un flujo incremental y ordenado por capas de dependencia técnica.
+
+---
+
+### 9.1 Fase 1 — Configuración del Entorno de Desarrollo
+
+**Paso 1.1 — Instalar Android Studio (JBR incluido)**
+> Descarga **Android Studio Meerkat (2024.3.x)** o superior desde [developer.android.com/studio](https://developer.android.com/studio). La instalación incluye el JetBrains Runtime (JBR 21) con `jlink`, requerido por el compilador de Android SDK 36+.
+
+**Paso 1.2 — Instalar los SDKs requeridos**
+> Desde el **SDK Manager** (`File > Settings > SDK Manager`), descarga:
+> - Android 14 (API 34) — Target principal del módulo `:app`
+> - Android 13 (API 33) — Compatibilidad backward
+> - Wear OS 4.0 (API 33/34) — Módulo `:cunasegurawear`
+> - Android TV (API 34) — Módulo `:cunaseguratv`
+
+**Paso 1.3 — Crear AVDs para pruebas locales**
+> Desde el **AVD Manager** (`Device Manager`), crea tres emuladores:
+> 1. **Pixel 7** o superior → para probar el módulo `:app`
+> 2. **Wear OS Large Round (API 34)** → para probar `:cunasegurawear`
+> 3. **Android TV 1080p (API 34)** → para probar `:cunaseguratv`
+
+```bash
+# Verificar que ADB reconoce los emuladores o dispositivos físicos:
+adb devices
+```
+
+---
+
+### 9.2 Fase 2 — Aprovisionamiento de Servicios Cloud
+
+**Paso 2.1 — Firebase Console**
+
+1. Accede a [console.firebase.google.com](https://console.firebase.google.com) y crea un proyecto (ejemplo: `CunaSegura-Prod`).
+2. Habilita los siguientes servicios desde la consola:
+   - **Authentication** → proveedor `Email/Password`
+   - **Realtime Database** → en modo `bloqueado`, después aplica las reglas de `database.rules.json` del repositorio
+3. Registra **dos apps Android** en el mismo proyecto Firebase:
+   - Paquete `:app` → `mx.edu.utng.cunasegura`
+   - Paquete `:cunaseguratv` → `mx.edu.utng.cunaseguratv`
+4. Descarga el archivo `google-services.json` para cada app y colócalos en:
+   - `./app/google-services.json`
+   - `./cunaseguratv/google-services.json`
+
+**Paso 2.2 — Google Cloud Console (Maps API)**
+
+1. Accede a [console.cloud.google.com](https://console.cloud.google.com) en el mismo proyecto vinculado a Firebase.
+2. Habilita las siguientes APIs:
+   - **Maps SDK for Android**
+   - **Geocoding API**
+3. En `Credentials > Create Credentials > API Key`, crea una clave y restringe su uso al paquete `mx.edu.utng.cunasegura` (SHA-1 del keystore de debug).
+
+**Paso 2.3 — HiveMQ Cloud (Broker MQTT)**
+
+1. Registra una cuenta gratuita en [hivemq.com/mqtt-cloud-broker](https://www.hivemq.com/mqtt-cloud-broker/).
+2. Crea un clúster y anota el `Cluster URL`, el `Username` y el `Password` del panel de control.
+3. En producción, usar el puerto `8883` con TLS. Para pruebas locales, el broker público `tcp://broker.hivemq.com:1883` también funciona sin autenticación.
+
+---
+
+### 9.3 Fase 3 — Clonación y Configuración del Repositorio
+
+**Paso 3.1 — Clonar el repositorio**
+
+```bash
+git clone https://github.com/<org>/CunaSegura.git
+cd CunaSegura
+```
+
+**Paso 3.2 — Configurar `local.properties`**
+
+Crea o edita el archivo `local.properties` en la raíz del proyecto. Este archivo **no debe commitearse** (está en `.gitignore`). Agrega las credenciales obtenidas en la Fase 2:
+
+```properties
+# Ruta del Android SDK (ajustar según sistema operativo)
+sdk.dir=C\:\\Users\\TU_USUARIO\\AppData\\Local\\Android\\Sdk
+
+# Google Maps
+MAPS_API_KEY=AIzaSy_TU_LLAVE_REAL_AQUI
+
+# HiveMQ MQTT Broker
+hivemq.brokerUrl=ssl://TU_CLUSTER.s2.eu.hivemq.cloud:8883
+hivemq.username=TU_USUARIO_HIVEMQ
+hivemq.password=TU_CONTRASENA_HIVEMQ
+```
+
+> ⚠️ **Nota crítica:** El `build.gradle.kts` de `:app` y `:cunaseguratv` inyecta estas propiedades como `BuildConfig` fields en tiempo de compilación mediante `buildConfigField(...)`. Si alguna clave falta, `assembleDebug` fallará con un error de `BuildConfig`.
+
+**Paso 3.3 — Abrir el proyecto en Android Studio**
+
+1. En Android Studio: `File > Open` → selecciona la carpeta raíz `CunaSegura/`.
+2. Espera a que Gradle sincronice todas las dependencias (puede tardar varios minutos la primera vez).
+3. Verifica que no haya errores de sincronización en el panel `Build`.
+
+---
+
+### 9.4 Fase 4 — Compilación y Generación de APKs
+
+**Paso 4.1 — Compilar el ecosistema completo (3 módulos en paralelo)**
+
+```bash
+# Desde la raíz del proyecto (PowerShell o terminal)
+.\gradlew assembleDebug --parallel
+```
+
+Los APKs se generarán automáticamente en las siguientes rutas:
+
+| Módulo | APK de salida |
+|---|---|
+| `:app` | `app/build/outputs/apk/debug/app-debug.apk` |
+| `:cunasegurawear` | `cunasegurawear/build/outputs/apk/debug/cunasegurawear-debug.apk` |
+| `:cunaseguratv` | `cunaseguratv/build/outputs/apk/debug/cunaseguratv-debug.apk` |
+
+**Paso 4.2 — Limpiar caché si hay errores de compilación**
+
+```bash
+.\gradlew clean
+# Luego volver a compilar:
+.\gradlew assembleDebug --parallel
+```
+
+---
+
+### 9.5 Fase 5 — Despliegue en Dispositivos y Emuladores
+
+**Paso 5.1 — Instalar directamente vía Gradle (dispositivo activo o emulador)**
+
+```bash
+# Módulo móvil (teléfono o emulador Pixel)
+.\gradlew :app:installDebug
+
+# Módulo TV (emulador Android TV o TV física con ADB habilitado)
+.\gradlew :cunaseguratv:installDebug
+
+# Módulo Wear OS (reloj o emulador Wear OS emparejado)
+.\gradlew :cunasegurawear:installDebug
+```
+
+**Paso 5.2 — Instalar manualmente vía ADB (para dispositivos sin emulador)**
+
+```bash
+# Habilitar ADB inalámbrico en el dispositivo (Android 11+):
+# Ajustes > Opciones de desarrollador > Depuración inalámbrica > Parear con código QR
+
+adb connect <IP_DEL_DISPOSITIVO>:5555
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+**Paso 5.3 — Emparejar el Smartwatch con el teléfono (para Wear OS)**
+
+> El reloj y el teléfono deben estar **en la misma cuenta de Google** y emparejados a través de la app **Google Pixel Watch** o **Wear OS companion**. Después de instalar `:cunasegurawear`, la app aparecerá automáticamente en el reloj.
+
+---
+
+### 9.6 Fase 6 — Verificación Funcional End-to-End
+
+Una vez instalados los tres módulos, ejecuta el siguiente flujo de prueba para confirmar que el ecosistema funciona correctamente:
+
+| # | Acción | Resultado Esperado |
+|---|---|---|
+| 1 | Registrar usuario en `:app` con email/password | Usuario creado en Firebase Auth y en FRDB `usuarios/{uid}` |
+| 2 | Crear red vecinal desde `:app` | Nodo `networks/{netId}` creado; usuario asignado como admin |
+| 3 | Vincular Smart TV desde `:app` (pantalla TV Config) | TV muestra PIN → ingresar en app → MQTT confirma vinculación |
+| 4 | Desde `:cunasegurawear`, dar 3 toques físicos | Countdown de 5s en reloj → alerta enviada vía MQTT |
+| 5 | Confirmar recepción en `:cunaseguratv` | Dashboard de TV muestra mapa con marcador rojo en coords del reloj |
+| 6 | Cancelar alarma desde `:app` o reloj | TV regresa a estado normal; `estado: "cancelada"` en MQTT |
+
+---
+
+## 10. Guía de Configuración, Compilación y Despliegue (Referencia Rápida)
 
 La clonación y ejecución exitosa de Cuna Segura requiere una configuración ambiental de infraestructura de Android de nivel intermedio-avanzado.
 
-### 9.1 Requisitos del Entorno de Desarrollo
+### 10.1 Requisitos del Entorno de Desarrollo
 * **IDE (Entorno de Desarrollo Integrado):** Android Studio Meerkat (2024.3.x) o más reciente. Evita las versiones Canary, quédate con canales estables (Stable).
 * **Java Development Kit:** JDK 17 (incorporado usualmente con Android Studio JBR).
 * **Android SDK:** Deben descargarse las plataformas API Level 30, 31, 33 y 34 desde el SDK Manager.
 * **SDK Tools:** Obligatoriamente Wear OS System Images, y un AVD (Android Virtual Device) configurado como un Smartwatch circular de 384x384. Un AVD para Android TV (1080p).
 
-### 9.2 Aprovisionamiento de Claves de API (Google y HiveMQ)
+### 10.2 Aprovisionamiento de Claves de API (Google y HiveMQ)
 Antes de presionar "Run" o construir el APK, debes poseer las siguientes claves.
 1. Accede a **Google Cloud Console**, crea un proyecto y habilita **Maps SDK for Android** y **Geocoding API**. Crea una clave de API (API Key).
 2. Genera una instancia en Firebase Console, asocia el paquete `mx.edu.utng.cunasegura` y descarga el archivo `google-services.json`. Reemplázalo en las carpetas `/app` y `/cunaseguratv`.
@@ -509,7 +710,7 @@ HIVEMQ_PASS=pass_seguro_123
 ```
 *Si estas claves no están presentes, el proceso `assembleDebug` fracasará, ya que Gradle buscará inyectarlas como BuildConfig variables y strings en el manifiesto.*
 
-### 9.3 Instrucciones de Gradle por Línea de Comandos
+### 10.3 Instrucciones de Gradle por Línea de Comandos
 
 La construcción de múltiples aplicaciones nativas al mismo tiempo puede hacerse a través de la interfaz de usuario del IDE, pero los arquitectos prefieren emplear Gradle Wrapper (Terminal).
 
@@ -539,9 +740,9 @@ Para instalar el APK en un dispositivo físico con adb habilitado o en un emulad
 
 ---
 
-## 10. Casos de Uso y Flujos de Pantalla (User Journeys)
+## 11. Casos de Uso y Flujos de Pantalla (User Journeys)
 
-### 10.1 Flujo: Creación y Administración de Red
+### 11.1 Flujo: Creación y Administración de Red
 1. El usuario `A` se loggea mediante Firebase Auth e ingresa a `MainUserScreen`. 
 2. Da clic en el icono "Red" de la barra inferior y elige "Crear Red".
 3. Ingresa nombre (ej. "Cuadra Sur"), el tipo (Abierta/Cerrada), y su cobertura en metros. El FusedLocationClient captura la geolocalización central.
@@ -550,7 +751,7 @@ Para instalar el APK en un dispositivo físico con adb habilitado o en un emulad
 6. El usuario `B` escanea el QR. Queda inscrito en `networks/XYZ_ID/miembros`.
 7. `A` como administrador (posee rol `esAdminDeRed = true`), puede editar el nombre de la red tocando el ícono ✏️ o expulsar a `B` de la lista de miembros de forma irrevocable.
 
-### 10.2 Flujo: Disparo de Alarma P2P
+### 11.2 Flujo: Disparo de Alarma P2P
 1. El usuario `C` sufre una emergencia, golpea su reloj 3 veces (`cunasegurawear`).
 2. Se procesan 5 segundos de advertencia y se obtiene el GPS (LocationManager del smartwatch).
 3. Se invoca MQTT publicando JSON (Lat, Lng, Alerta) en `cunasegura/alertas`.
@@ -560,7 +761,7 @@ Para instalar el APK en un dispositivo físico con adb habilitado o en un emulad
 
 ---
 
-## 11. Glosario de Términos
+## 12. Glosario de Términos
 
 * **ADB (Android Debug Bridge):** Herramienta que permite conectar e instalar las aplicaciones compiladas del repositorio directamente a Smart TVs físicas, celulares o relojes a través de Wi-Fi o USB.
 * **Glassmorphism:** Estilo de diseño visual (UI) que simula paneles de vidrio escarchado, desenfocando (blurring) el fondo para lograr jerarquía óptica en componentes flotantes.
@@ -573,13 +774,13 @@ Para instalar el APK en un dispositivo físico con adb habilitado o en un emulad
 
 ---
 
-## 12. Anexos (Documentación Externa y Visual)
+## 13. Anexos (Documentación Externa y Visual)
 
 Dado lo extensivo de la interfaz gráfica y de las directrices visuales adoptadas, proveemos documentos complementarios aislados por plataforma listados al inicio de este documento.
 
 ---
 > 💡 *Para cualquier duda técnica con el despliegue, la configuración o la extensión del código fuente, por favor dirígete a los desarrolladores a través de Pull Requests en el repositorio.*
 > 
-> *Este documento cuenta con un conteo masivo e intensivo de especificaciones ingenieriles con la finalidad de ofrecer la base de conocimientos más extensa posible para futuros desarrolladores o inversores del sistema **Cuna Segura** (Build 1.0.0).*
+> *Este documento cuenta con un conteo masivo e intensivo de especificaciones ingenieriles con la finalidad de ofrecer la base de conocimientos más extensa posible para futuros desarrolladores o inversores del sistema **Cuna Segura** (Build 3.0.0).*
 > 
 > 📍 Desarrollado por GIDS6092, Generación 2026. Todos los derechos reservados bajo las políticas open-source del autor y la institución de orígen.
