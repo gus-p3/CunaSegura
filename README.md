@@ -20,10 +20,10 @@ Explora la documentación detallada de cada módulo, con capturas de pantalla, e
 ---
 ## Aprobacion del Proyecto
 
-| 📄 Documento Adicional | 🎥 Video Demostrativo | 🎥 Video de Aprobación |
-| :---: | :---: | :---: |
-| [**Carta Validación (PDF)**](docs/CartaValidacion_Beneficiario_DDI_UTNG.pdf) | [**Ver Video en YouTube**](https://youtu.be/1BSrhtfrpDU?si=mwk655zXUkczbK46) | [**Ver Video en YouTube**](https://youtu.be/1AcKAkqf2QM) |
-| *Carta de Validación* | *Video de demostración Proyecto* | *Video del Aprobación de Proyecto* | 
+| 📄 Documento Adicional | 🎥 Video Demostrativo y Aprobación| 
+| :---: | :---: |
+| [**Carta Validación (PDF)**](docs/CartaValidacion_Beneficiario_DDI_UTNG.pdf) | [**Ver Video en YouTube**](https://youtu.be/685shUoOgHk?si=t9fVMWxB80mfpELY) | 
+| *Carta de Validación* | *Video de demostración Proyecto* |
 
 ---
 
