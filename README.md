@@ -16,7 +16,20 @@ Explora la documentación detallada de cada módulo, con capturas de pantalla, e
 | *El centro de operaciones y configuración del sistema.* | *La estación de monitoreo y despliegue del hogar.* | *El disparador físico y sensor táctico.* |
 
 > 👉 **[📸 Acceder a la Galería Interactiva de Capturas (Wear OS)](docs/CAPTURAS_WEAROS.md)**
->
+
+---
+
+## 📚 Guías de Construcción e Implementación Paso a Paso (Código Completo)
+
+Para desarrolladores que desean replicar, auditar o extender la implementación de cada módulo paso a paso con código fuente íntegro, diagramas y dependencias:
+
+| 📱 Guía Paso a Paso Smartphone | 📺 Guía Paso a Paso Smart TV | ⌚ Guía Paso a Paso Wear OS |
+| :---: | :---: | :---: |
+| [**`MOVIL_PASO.md`**](docs/guias_paso_a_paso/MOVIL_PASO.md) | [**`TV_PASO.md`**](docs/guias_paso_a_paso/TV_PASO.md) | [**`WEAROS_PASO.md`**](docs/guias_paso_a_paso/WEAROS_PASO.md) |
+| ✅ *11 Fases Completas: Arquitectura, Room, GPS, ZXing QR, Vico Charts y Admin.* | ⏳ *Central de Monitoreo Leanback, MQTT TLS y Audio Alarma.* | ⏳ *Disparador Háptico, Wearable Data Layer y Detección de Toques.* |
+
+> 📁 **[Explorar Hub de Guías Técnicas Paso a Paso](docs/guias_paso_a_paso/README.md)**
+
 ---
 ## Aprobacion del Proyecto
 
