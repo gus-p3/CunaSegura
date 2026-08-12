@@ -13,6 +13,7 @@ Al estudiar y seguir esta guía, comprenderás:
 3. **Comunicación Local (Wear Data Layer)**: Implementar una comunicación de baja latencia con el smartphone por **Bluetooth Low Energy (BLE)** mediante la API de `Wearable MessageClient`.
 4. **Máquina de Estados de Alertas**: Administrar el ciclo de vida del SOS en un ViewModel (COUNTDOWN, ACTIVE, LIFE_CHECK, CANCELLED, IDLE) con temporizadores adaptativos y resiliencia local.
 5. **UI Circular Háptica**: Diseñar interfaces amigables para pantallas redondas con micro-animaciones en Compose y retroalimentación táctil intensiva (Vibraciones).
+6. **Rastreo GPS e Integración de Navegación**: Administrar actualizaciones de ubicación y el flujo de navegación según el estado de la alerta.
 
 ---
 
@@ -830,7 +831,7 @@ fun LifeCheckScreen(
     // Captura el motor de vibración háptico del smartwatch
     val haptic = LocalHapticFeedback.current
     LaunchedEffect(Unit) {
-        // Ejecuta una vibración persistente larga para alertar táctilmente al usuario
+        // Ejecuta una vibración persistentente larga para alertar táctilmente al usuario
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
     }
 
@@ -965,6 +966,203 @@ class WatchActivity : ComponentActivity() {
                 // Vincula la UI declarativa con el host de navegación y el ViewModel
                 WatchNavHost(viewModel = viewModel)
             }
+        }
+    }
+}
+```
+
+---
+
+## FASE 7: Rastreo de Ubicación Local (`WatchLocationTracker.kt`)
+
+El smartwatch puede usar su propio hardware GPS en caso de estar en modo *Standalone* (desconectado del teléfono móvil).
+
+> 📋 **INSTRUCCIÓN:** Crea el archivo `WatchLocationTracker.kt`:
+
+```kotlin
+package mx.edu.utng.cunasegurawear.data.location
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
+import android.os.Bundle
+import androidx.core.content.ContextCompat
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+/**
+ * Gestor del hardware GPS local en el wearable.
+ */
+class WatchLocationTracker(private val context: Context) {
+    // Recupera el LocationManager del sistema operativo
+    private val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+    private val _locationFlow = MutableStateFlow<Location?>(null)
+    val locationFlow: StateFlow<Location?> = _locationFlow.asStateFlow()
+
+    // Listener reactivo que captura las variaciones de coordenadas del GPS
+    private val locationListener = object : LocationListener {
+        override fun onLocationChanged(location: Location) {
+            _locationFlow.value = location
+        }
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+        override fun onProviderEnabled(provider: String) {}
+        override fun onProviderDisabled(provider: String) {}
+    }
+
+    private fun hasPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            context,
+            android.Manifest.permission.ACCESS_FINE_LOCATION
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED ||
+        ContextCompat.checkSelfPermission(
+            context,
+            android.Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    }
+
+    @SuppressLint("MissingPermission")
+    fun startTracking() {
+        if (!hasPermission()) return
+        try {
+            // Revisa qué proveedores de localización del sistema están disponibles
+            val isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+            val isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+
+            if (isGpsEnabled) {
+                // Solicita actualizaciones cada 2 segundos o cuando haya un cambio de 1 metro
+                locationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER,
+                    2000L,
+                    1f,
+                    locationListener
+                )
+            } else if (isNetworkEnabled) {
+                locationManager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER,
+                    2000L,
+                    1f,
+                    locationListener
+                )
+            }
+            
+            // Establece un valor inicial con la última ubicación conocida
+            val lastKnownGps = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+            val lastKnownNetwork = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+            _locationFlow.value = lastKnownGps ?: lastKnownNetwork
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun stopTracking() {
+        try {
+            // Remueve el listener de ubicación para evitar fugas de memoria y gasto de batería
+            locationManager.removeUpdates(locationListener)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+}
+```
+
+---
+
+## FASE 8: Navegación Dinámica por Fases (`WatchNavHost.kt`)
+
+La navegación en Wear OS no se basa en acciones manuales del usuario, sino que reacciona directamente a la fase activa en el ViewModel (`AlertPhase`).
+
+> 📋 **INSTRUCCIÓN:** Crea el archivo `WatchNavHost.kt`:
+
+```kotlin
+package mx.edu.utng.cunasegurawear.presentation.navigation
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.wear.compose.navigation.SwipeDismissableNavHost
+import androidx.wear.compose.navigation.composable
+import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import mx.edu.utng.cunasegurawear.domain.model.AlertPhase
+import mx.edu.utng.cunasegurawear.presentation.screens.AlertActiveScreen
+import mx.edu.utng.cunasegurawear.presentation.screens.ConfigScreen
+import mx.edu.utng.cunasegurawear.presentation.screens.CountdownScreen
+import mx.edu.utng.cunasegurawear.presentation.screens.LifeCheckScreen
+import mx.edu.utng.cunasegurawear.presentation.screens.StatusScreen
+import mx.edu.utng.cunasegurawear.presentation.viewmodel.WatchViewModel
+
+@Composable
+fun WatchNavHost(viewModel: WatchViewModel) {
+    val state by viewModel.state.collectAsState()
+    val navController = rememberSwipeDismissableNavController()
+
+    // Sincroniza y gatilla transiciones automáticas en la UI según cambie la fase en el ViewModel
+    LaunchedEffect(state.phase) {
+        when (state.phase) {
+            AlertPhase.COUNTDOWN  -> navController.navigate("countdown")
+            AlertPhase.ACTIVE     -> navController.navigate("alert_active")
+            AlertPhase.LIFE_CHECK -> navController.navigate("life_check")
+            AlertPhase.IDLE, AlertPhase.CANCELLED -> navController.navigate("status") {
+                // Al volver a reposo, limpia la pila de navegación para liberar memoria
+                popUpTo("status") { inclusive = true }
+            }
+        }
+    }
+
+    // Maneja el evento de deslizamiento físico (Swipe de regreso)
+    LaunchedEffect(navController) {
+        var previousRoute: String? = null
+        navController.currentBackStackEntryFlow.collect { entry ->
+            val currentRoute = entry.destination.route
+            // Si el usuario desliza desde el SOS activo de regreso a la cuenta regresiva, activa re-conteo
+            if (currentRoute == "countdown"
+                && previousRoute == "alert_active"
+                && state.phase == AlertPhase.ACTIVE
+            ) {
+                viewModel.onSwipeBackToCountdown()
+            }
+            previousRoute = currentRoute
+        }
+    }
+
+    // Host de navegación adaptado para wearables (soporta SwipeDismissable)
+    SwipeDismissableNavHost(navController, startDestination = "status") {
+        composable("status") {
+            StatusScreen(
+                state = state,
+                onSosClick = { viewModel.onSosPress() },
+                onSimulate1Tap = { viewModel.onSimulateTaps(1) },
+                onSimulate2Taps = { viewModel.onSimulateTaps(2) },
+                onSimulate3Taps = { viewModel.onSimulateTaps(3) },
+                onSimulate4Taps = { viewModel.onSimulateTaps(4) },
+                onConfig = { navController.navigate("config") }
+            )
+        }
+        composable("config") {
+            ConfigScreen(
+                configs = state.touchConfigs,
+                onUpdateConfig = { tapNumber, action -> viewModel.updateTouchConfig(tapNumber, action) },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable("countdown") {
+            CountdownScreen(
+                seconds = state.countdownSeconds,
+                activeActionLabel = state.activeActionLabel,
+                onCancel = { viewModel.onCancelCountdown() }
+            )
+        }
+        composable("alert_active") {
+            AlertActiveScreen(state = state)
+        }
+        composable("life_check") {
+            LifeCheckScreen(
+                onYes = { viewModel.onLifeCheckYes() },
+                onNo = { viewModel.onLifeCheckNo() }
+            )
         }
     }
 }
