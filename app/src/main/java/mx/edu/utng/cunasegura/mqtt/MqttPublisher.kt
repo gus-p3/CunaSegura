@@ -11,6 +11,18 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 import java.util.UUID
 
+/**
+ * Modelo de datos serializable para transmisión de eventos de alerta hacia el broker MQTT.
+ *
+ * @property usuarioId Identificador del usuario emisor.
+ * @property nombreUsuario Nombre visible del vecino.
+ * @property latitud Coordenada GPS de latitud.
+ * @property longitud Coordenada GPS de longitud.
+ * @property nivelAlerta Nivel de severidad / número de toques (1 a 4).
+ * @property estado Estado de la alerta (`activa`, `cancelada`, `atendida`).
+ * @property timestamp Marca de tiempo Unix de emisión.
+ * @property networkId Identificador de la red comunitaria receptora.
+ */
 @Serializable
 data class AlertaMqttMessage(
     val usuarioId: Int,
@@ -23,16 +35,39 @@ data class AlertaMqttMessage(
     val networkId: String = ""
 )
 
+/**
+ * Modelo de datos serializable para eventos de vinculación de Smart TV vía MQTT.
+ *
+ * @property tvId Identificador único de la pantalla Smart TV.
+ * @property networkId Identificador de la red comunitaria enlazada.
+ */
 @Serializable
 data class TvVinculacionMqttMessage(
     val tvId: String,
     val networkId: String
 )
 
+/**
+ * Cliente publicador MQTT asíncrono basado en Eclipse Paho con soporte TLS/SSL para HiveMQ Cloud.
+ *
+ * Transmite paquetes JSON hacia los canales `cunasegura/alertas` y `cunasegura/tv/vinculacion`
+ * para alimentar en tiempo real la aplicación comunitaria de Smart TV Android Leanback.
+ */
 object MqttPublisher {
     private const val TAG = "MQTT_PUBLISHER"
     private const val TOPIC_ALERTAS = "cunasegura/alertas"
 
+    /**
+     * Publica una alerta SOS en el topic general de alertas de Smart TV a través del broker MQTT HiveMQ.
+     *
+     * @param usuarioId ID local o hash del usuario emisor.
+     * @param nombreUsuario Nombre del vecino en emergencia.
+     * @param lat Latitud GPS.
+     * @param lon Longitud GPS.
+     * @param networkId Red comunitaria a la que pertenece el evento.
+     * @param estado Estado de la alerta (`activa` o `cancelada`).
+     * @param nivelAlerta Nivel de urgencia (por defecto 3 para TV).
+     */
     fun publishAlertaTv(
         usuarioId: Int = 1,
         nombreUsuario: String = "Vecino",
@@ -93,6 +128,12 @@ object MqttPublisher {
         }
     }
 
+    /**
+     * Publica el evento de vinculación exitosa entre un dispositivo móvil y una Smart TV.
+     *
+     * @param tvId Identificador escaneado de la pantalla Smart TV.
+     * @param networkId Identificador de la red asignada.
+     */
     fun publishTvVinculacion(tvId: String, networkId: String) {
         try {
             val clientId = "cunasegura-phone-${UUID.randomUUID().toString().substring(0, 8)}"
@@ -128,3 +169,4 @@ object MqttPublisher {
         }
     }
 }
+

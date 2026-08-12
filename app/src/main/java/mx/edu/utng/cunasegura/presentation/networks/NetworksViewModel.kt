@@ -14,6 +14,18 @@ import mx.edu.utng.cunasegura.di.AppModule
 import mx.edu.utng.cunasegura.domain.model.Network
 import mx.edu.utng.cunasegura.domain.model.Usuario
 
+/**
+ * Estado inmutable de la pantalla de gestión de Redes Vecinales Comunitarias.
+ *
+ * @property usuarioActual Usuario en sesión.
+ * @property redActual Red vecinal a la que pertenece el usuario.
+ * @property miembrosRed Lista de vecinos afiliados a la red actual.
+ * @property alertasRed Historial de alertas emitidas en la red.
+ * @property esAdminDeRed Indica si el usuario es creador o moderador de la red actual.
+ * @property redesCercanas Redes abiertas descubiertas por proximidad geográfica.
+ * @property isLoading Bandera de progreso durante transacciones en Firebase.
+ * @property mensaje Notificación de retroalimentación o error.
+ */
 data class NetworksUiState(
     val usuarioActual: Usuario? = null,
     val redActual: Network? = null,
@@ -25,6 +37,11 @@ data class NetworksUiState(
     val mensaje: String? = null
 )
 
+/**
+ * ViewModel que gestiona la afiliación, creación, descubrimiento por geolocalización y administración de Redes Vecinales.
+ *
+ * @param context Contexto de la aplicación para resolver dependencias desde [AppModule].
+ */
 class NetworksViewModel(context: Context) : ViewModel() {
     private val userRepo = AppModule.provideUsuarioRepository(context)
     private val netRepo = AppModule.provideNetworkRepository(context)
@@ -36,6 +53,9 @@ class NetworksViewModel(context: Context) : ViewModel() {
         cargarInformacion()
     }
 
+    /**
+     * Consulta la red actual del usuario, sus miembros, alertas e identifica si posee privilegios de moderación.
+     */
     fun cargarInformacion() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, mensaje = null)
@@ -85,6 +105,11 @@ class NetworksViewModel(context: Context) : ViewModel() {
         }
     }
 
+    /**
+     * Expulsa a un miembro de la red vecinal actual.
+     *
+     * @param uidMiembro UID del usuario a expulsar.
+     */
     fun expulsarMiembro(uidMiembro: String) {
         viewModelScope.launch {
             try {
@@ -103,6 +128,11 @@ class NetworksViewModel(context: Context) : ViewModel() {
         }
     }
 
+    /**
+     * Renombra la red vecinal actual.
+     *
+     * @param nuevoNombre Nuevo nombre de la comunidad.
+     */
     fun actualizarNombreRed(nuevoNombre: String) {
         viewModelScope.launch {
             val redId = _uiState.value.redActual?.id ?: return@launch
@@ -125,6 +155,9 @@ class NetworksViewModel(context: Context) : ViewModel() {
         }
     }
 
+    /**
+     * Crea y registra una nueva red vecinal comunitaria asignando al creador como moderador.
+     */
     fun crearRedVecinal(nombre: String, tipo: String, lat: Double, lng: Double, radio: Double) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
@@ -162,6 +195,11 @@ class NetworksViewModel(context: Context) : ViewModel() {
         }
     }
 
+    /**
+     * Une al usuario a una red vecinal mediante el escaneo de un código QR.
+     *
+     * @param networkId Identificador extraído del código QR.
+     */
     fun unirsePorQr(networkId: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
@@ -187,6 +225,12 @@ class NetworksViewModel(context: Context) : ViewModel() {
         }
     }
 
+    /**
+     * Busca y filtra redes comunitarias abiertas por radio de cobertura GPS.
+     *
+     * @param lat Latitud GPS.
+     * @param lng Longitud GPS.
+     */
     fun buscarRedesAbiertasCercanas(lat: Double, lng: Double) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
@@ -215,6 +259,9 @@ class NetworksViewModel(context: Context) : ViewModel() {
         }
     }
 
+    /**
+     * Se une a una red pública abierta seleccionada por cercanía.
+     */
     fun unirseARedAbierta(networkId: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
@@ -233,6 +280,9 @@ class NetworksViewModel(context: Context) : ViewModel() {
         }
     }
 
+    /**
+     * Abandona la red vecinal actual restableciendo la red personal independiente del usuario.
+     */
     fun salirDeRedActual() {
         viewModelScope.launch {
             try {
@@ -253,11 +303,17 @@ class NetworksViewModel(context: Context) : ViewModel() {
         }
     }
 
+    /**
+     * Limpia mensajes informativos o de alerta en la UI.
+     */
     fun limpiarMensaje() {
         _uiState.value = _uiState.value.copy(mensaje = null)
     }
 }
 
+/**
+ * Fábrica para instanciar [NetworksViewModel] pasando el contexto de la aplicación.
+ */
 class NetworksViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(NetworksViewModel::class.java)) {
@@ -267,3 +323,4 @@ class NetworksViewModelFactory(private val context: Context) : ViewModelProvider
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
+

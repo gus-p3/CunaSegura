@@ -22,6 +22,14 @@ import mx.edu.utng.cunasegura.domain.model.Usuario
 import mx.edu.utng.cunasegura.domain.repository.IAlertaRepository
 import mx.edu.utng.cunasegura.domain.usecase.ObtenerUsuarioActualUseCase
 
+/**
+ * Modelo ligero para renderizar marcadores de posición de vecinos en el mapa OpenStreetMap (OSMDroid).
+ *
+ * @property id UID del vecino.
+ * @property nombre Nombre visible del vecino.
+ * @property lat Coordenada de latitud.
+ * @property lon Coordenada de longitud.
+ */
 data class VecinoLocationMobile(
     val id: String,
     val nombre: String,
@@ -34,6 +42,9 @@ data class VecinoLocationMobile(
  *
  * Carga la ubicación del usuario (lat/lng de Room), observa vecinos de la red
  * y las alertas activas de la comunidad en tiempo real.
+ *
+ * @property obtenerUsuarioActualUseCase Caso de uso para obtener el usuario activo.
+ * @property alertaRepository Repositorio para monitorear alertas de la comunidad.
  */
 class MapViewModel(
     private val obtenerUsuarioActualUseCase: ObtenerUsuarioActualUseCase,
@@ -56,6 +67,9 @@ class MapViewModel(
         cargarUsuario()
     }
 
+    /**
+     * Recupera el usuario actual y suscribe observadores para alertas y vecinos de la red.
+     */
     private fun cargarUsuario() {
         viewModelScope.launch {
             val usuario = obtenerUsuarioActualUseCase()
@@ -80,6 +94,9 @@ class MapViewModel(
         }
     }
 
+    /**
+     * Establece un listener en Firebase Realtime Database para seguir las ubicaciones de los vecinos de la red.
+     */
     private fun escucharVecinosEnFirebase(networkId: String) {
         val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
         val dbRef = FirebaseDatabase.getInstance().getReference("usuarios")
@@ -108,11 +125,20 @@ class MapViewModel(
         })
     }
 
+    /**
+     * Actualiza la posición del usuario localmente y en Firebase.
+     *
+     * @param lat Latitud GPS.
+     * @param lon Longitud GPS.
+     */
     fun setUbicacionUsuario(lat: Double, lon: Double) {
         _userLocation.value = GeoPoint(lat, lon)
         actualizarUbicacionEnFirebase(lat, lon)
     }
 
+    /**
+     * Sincroniza las coordenadas en la rama del usuario en Firebase Realtime Database.
+     */
     private fun actualizarUbicacionEnFirebase(lat: Double, lon: Double) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
         val db = FirebaseDatabase.getInstance().getReference("usuarios").child(uid)
@@ -121,6 +147,9 @@ class MapViewModel(
     }
 }
 
+/**
+ * Fábrica para instanciar [MapViewModel] inyectando casos de uso desde [AppModule].
+ */
 class MapViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(MapViewModel::class.java)) {
@@ -133,3 +162,4 @@ class MapViewModelFactory(private val context: Context) : ViewModelProvider.Fact
         throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")
     }
 }
+

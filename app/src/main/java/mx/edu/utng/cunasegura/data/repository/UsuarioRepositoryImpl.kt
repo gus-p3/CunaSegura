@@ -7,14 +7,20 @@ import mx.edu.utng.cunasegura.domain.model.Usuario
 import mx.edu.utng.cunasegura.domain.repository.IUsuarioRepository
 
 /**
- * Implementación concreta de [IUsuarioRepository] que usa Firebase (Auth y Realtime Database)
- * como única fuente de verdad, eliminando la necesidad de persistir usuarios locales en SQLite/Room.
+ * Implementación concreta de [IUsuarioRepository] basada en Firebase Authentication y Firebase Realtime Database.
+ *
+ * Utiliza la rama `/usuarios/{uid}` como única fuente de verdad para sincronización en tiempo real entre vecinos y administración.
  */
 class UsuarioRepositoryImpl : IUsuarioRepository {
 
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseDatabase.getInstance()
 
+    /**
+     * Guarda o actualiza los datos del usuario autenticado en Firebase Realtime Database.
+     *
+     * @param usuario Datos del modelo de dominio.
+     */
     override suspend fun guardarUsuario(usuario: Usuario) {
         val firebaseUser = auth.currentUser ?: return
         val map = mapOf(
@@ -29,6 +35,12 @@ class UsuarioRepositoryImpl : IUsuarioRepository {
         db.getReference("usuarios").child(firebaseUser.uid).updateChildren(map).await()
     }
 
+    /**
+     * Busca un usuario registrado en Firebase mediante una consulta indexada por su número de teléfono.
+     *
+     * @param telefono Número de 10 dígitos.
+     * @return [Usuario] encontrado o `null`.
+     */
     override suspend fun buscarPorTelefono(telefono: String): Usuario? {
         val snapshot = db.getReference("usuarios")
             .orderByChild("telefono")
@@ -62,6 +74,11 @@ class UsuarioRepositoryImpl : IUsuarioRepository {
         return null
     }
 
+    /**
+     * Recupera todos los usuarios registrados en el nodo `/usuarios` de Firebase Realtime Database.
+     *
+     * @return Lista completa de [Usuario].
+     */
     override suspend fun obtenerTodosLosUsuarios(): List<Usuario> {
         val snapshot = db.getReference("usuarios").get().await()
         return snapshot.children.mapNotNull { child ->
@@ -81,6 +98,11 @@ class UsuarioRepositoryImpl : IUsuarioRepository {
         }
     }
 
+    /**
+     * Obtiene los datos del perfil activo en Firebase Authentication y su registro en la base de datos.
+     *
+     * @return [Usuario] activo o `null` si no hay sesión iniciada.
+     */
     override suspend fun obtenerUsuarioActual(): Usuario? {
         val firebaseUser = auth.currentUser ?: return null
         val snapshot = db.getReference("usuarios").child(firebaseUser.uid).get().await()
@@ -112,6 +134,14 @@ class UsuarioRepositoryImpl : IUsuarioRepository {
         )
     }
 
+    /**
+     * Actualiza los datos de nombre, teléfono y opcionalmente la contraseña del usuario en Firebase.
+     *
+     * @param nombre Nuevo nombre completo.
+     * @param telefono Nuevo teléfono.
+     * @param nuevaPassword Nueva contraseña opcional.
+     * @return [Result] que encapsula éxito o la excepción generada.
+     */
     override suspend fun actualizarPerfilUsuario(nombre: String, telefono: String, nuevaPassword: String?): Result<Unit> {
         val firebaseUser = auth.currentUser ?: return Result.failure(Exception("Sesión no iniciada"))
         return try {
@@ -130,7 +160,11 @@ class UsuarioRepositoryImpl : IUsuarioRepository {
         }
     }
 
+    /**
+     * Limpieza de sesión gestionada por Firebase Auth.
+     */
     override suspend fun limpiarSesionLocal() {
         // No-op: La sesión se gestiona únicamente mediante Firebase Auth
     }
 }
+

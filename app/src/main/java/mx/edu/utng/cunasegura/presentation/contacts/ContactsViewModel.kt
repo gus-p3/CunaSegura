@@ -20,6 +20,14 @@ import mx.edu.utng.cunasegura.domain.usecase.ObtenerUsuarioActualUseCase
 const val MAX_CONTACTOS = 5
 val RELACIONES = listOf("Mamá", "Papá", "Pareja", "Hermano/a", "Otro")
 
+/**
+ * Estado inmutable del formulario modal para agregar o editar un contacto de auxilio.
+ *
+ * @property id Identificador del contacto (0 si es nuevo).
+ * @property nombre Nombre o alias.
+ * @property telefono Teléfono de 10 dígitos.
+ * @property relacion Parentesco o vínculo seleccionado.
+ */
 data class ContactsFormState(
     val id: Int = 0,
     val nombre: String = "",
@@ -27,6 +35,16 @@ data class ContactsFormState(
     val relacion: String = RELACIONES.first()
 )
 
+/**
+ * ViewModel encargado del directorio y gestión de contactos de emergencia.
+ *
+ * Limita el registro a un máximo de 5 contactos ([MAX_CONTACTOS]) y coordina operaciones CRUD en la nube.
+ *
+ * @property agregarContactoUseCase Caso de uso para agregar/actualizar contacto.
+ * @property eliminarContactoUseCase Caso de uso para eliminar contacto.
+ * @property obtenerContactosUseCase Caso de uso para observar el flujo de contactos.
+ * @property obtenerUsuarioActualUseCase Caso de uso para asociar el ID de usuario correspondiente.
+ */
 class ContactsViewModel(
     private val agregarContactoUseCase: AgregarContactoUseCase,
     private val eliminarContactoUseCase: EliminarContactoUseCase,
@@ -55,6 +73,11 @@ class ContactsViewModel(
         }
     }
 
+    /**
+     * Muestra la hoja modal precargando los datos del contacto o en blanco si es nuevo.
+     *
+     * @param contacto Contacto a editar o `null` si es una nueva inserción.
+     */
     fun onShowSheet(contacto: ContactoEmergencia?) {
         if (contacto != null) {
             _formState.value = ContactsFormState(contacto.id, contacto.nombre, contacto.telefono, contacto.relacion)
@@ -64,24 +87,42 @@ class ContactsViewModel(
         _showAddSheet.value = true
     }
 
+    /**
+     * Oculta la hoja modal del formulario.
+     */
     fun onHideSheet() {
         _showAddSheet.value = false
     }
 
+    /**
+     * Actualiza el nombre en el formulario.
+     */
     fun onNombreChange(value: String) {
         _formState.value = _formState.value.copy(nombre = value)
     }
 
+    /**
+     * Actualiza y filtra el teléfono a 10 dígitos numéricos.
+     */
     fun onTelefonoChange(value: String) {
         _formState.value = _formState.value.copy(telefono = value.filter { it.isDigit() }.take(10))
     }
 
+    /**
+     * Actualiza el parentesco seleccionado.
+     */
     fun onRelacionChange(value: String) {
         _formState.value = _formState.value.copy(relacion = value)
     }
 
+    /**
+     * Valida si el usuario aún puede añadir más contactos respetando el límite máximo permitido.
+     */
     fun puedeAgregar(): Boolean = _contactos.value.size < MAX_CONTACTOS
 
+    /**
+     * Valida y persiste el contacto de emergencia en Firebase y localmente.
+     */
     fun onGuardarContacto() {
         val form = _formState.value
         if (form.nombre.isBlank() || form.telefono.length < 10) return
@@ -101,6 +142,11 @@ class ContactsViewModel(
         }
     }
 
+    /**
+     * Elimina el contacto especificado por ID.
+     *
+     * @param id Identificador del contacto.
+     */
     fun onEliminarContacto(id: Int) {
         viewModelScope.launch {
             eliminarContactoUseCase(id)
@@ -108,6 +154,9 @@ class ContactsViewModel(
     }
 }
 
+/**
+ * Fábrica para instanciar [ContactsViewModel] inyectando casos de uso desde [AppModule].
+ */
 class ContactsViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ContactsViewModel::class.java)) {
@@ -121,4 +170,4 @@ class ContactsViewModelFactory(private val context: Context) : ViewModelProvider
         }
         throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")
     }
-}
+}

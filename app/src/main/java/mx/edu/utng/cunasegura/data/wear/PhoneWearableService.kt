@@ -31,6 +31,16 @@ import android.app.PendingIntent
 import androidx.core.app.NotificationCompat
 import mx.edu.utng.cunasegura.R
 
+/**
+ * Servicio en segundo plano que escucha mensajes de Google Play Services Wearable API
+ * enviados por el reloj inteligente (Wear OS / SmartWatch).
+ *
+ * Rutas gestionadas:
+ * - `/cunasegura/sos/trigger`: Dispara la acción SOS asignada a los toques (SMS, GPS, Alarma TV o 911).
+ * - `/cunasegura/sos/cancel`: Cancela la alerta activa y notifica a los vecinos.
+ * - `/cunasegura/config/update`: Recibe y guarda cambios en la configuración de toques.
+ * - `/cunasegura/config/sync_request`: Envía la configuración actual de acciones hacia el reloj.
+ */
 class PhoneWearableService : WearableListenerService() {
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -42,6 +52,9 @@ class PhoneWearableService : WearableListenerService() {
         createNotificationChannel()
     }
 
+    /**
+     * Crea el canal de notificación con alta prioridad para desplegar banners de eventos SOS.
+     */
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = "Alertas SOS"
@@ -60,6 +73,12 @@ class PhoneWearableService : WearableListenerService() {
         }
     }
 
+    /**
+     * Muestra una notificación emergente banner al usuario con el estado del despacho SOS.
+     *
+     * @param title Título del mensaje.
+     * @param message Cuerpo descriptivo.
+     */
     private fun showNotification(title: String, message: String) {
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -75,8 +94,8 @@ class PhoneWearableService : WearableListenerService() {
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
             .setContentText(message)
-            .setPriority(NotificationCompat.PRIORITY_MAX) // Prioridad máxima para Banner
-            .setCategory(NotificationCompat.CATEGORY_ALARM) // Categoría de alarma/emergencia
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setSound(defaultSoundUri)
             .setVibrate(longArrayOf(100, 200, 300, 400, 500))
@@ -87,6 +106,11 @@ class PhoneWearableService : WearableListenerService() {
         notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
     }
 
+    /**
+     * Callback invocado automáticamente al recibir un mensaje por canal Wearable.
+     *
+     * @param messageEvent Evento que contiene la ruta y los datos binarios del mensaje.
+     */
     override fun onMessageReceived(messageEvent: MessageEvent) {
         super.onMessageReceived(messageEvent)
         Log.d(TAG, "Mensaje recibido desde Wear OS: ${messageEvent.path}")
@@ -112,12 +136,16 @@ class PhoneWearableService : WearableListenerService() {
         }
     }
 
+    /**
+     * Procesa la detonación de una alerta SOS proveniente del SmartWatch según la acción configurada.
+     *
+     * @param payload Contenido en formato clave-valor `ACTION=...|ADDRESS=...`.
+     */
     private suspend fun handleSosTrigger(payload: String) {
-        // Payload format: "ACTION=ALARMA_TV|ADDRESS=Ubicación actual"
         Log.d(TAG, "Trigger SOS con payload: $payload")
         showNotification("Tu Señal SOS fue recibida", "Procesando la alerta desde tu reloj...")
         
-        // Obtener checkVida dinámicamente y enviarlo al reloj
+        // Obtener checkVida dinámicamente y sincronizarlo al reloj
         try {
             val configSnap = com.google.firebase.database.FirebaseDatabase.getInstance()
                 .getReference("configuracion_global")
@@ -151,7 +179,7 @@ class PhoneWearableService : WearableListenerService() {
             }
         }
         
-        // Obtener ubicación actual para bitácora de alertas_log
+        // Obtener ubicación actual para bitácora de alerts_log
         var currentLat = 0.0
         var currentLon = 0.0
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
@@ -216,10 +244,10 @@ class PhoneWearableService : WearableListenerService() {
                     ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                     try {
                         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
-                        val location = fusedLocationClient.lastLocation.await()
-                        if (location != null) {
-                            lat = location.latitude
-                            lon = location.longitude
+                        val locationResult = fusedLocationClient.lastLocation.await()
+                        if (locationResult != null) {
+                            lat = locationResult.latitude
+                            lon = locationResult.longitude
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error obteniendo ubicación", e)
@@ -258,10 +286,10 @@ class PhoneWearableService : WearableListenerService() {
                     ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                     try {
                         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
-                        val location = fusedLocationClient.lastLocation.await()
-                        if (location != null) {
-                            lat = location.latitude
-                            lon = location.longitude
+                        val locationResult = fusedLocationClient.lastLocation.await()
+                        if (locationResult != null) {
+                            lat = locationResult.latitude
+                            lon = locationResult.longitude
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error obteniendo ubicación para TV", e)
@@ -298,6 +326,9 @@ class PhoneWearableService : WearableListenerService() {
         }
     }
 
+    /**
+     * Procesa la solicitud de cancelación de alerta detonada desde el SmartWatch.
+     */
     private suspend fun handleSosCancel() {
         try {
             val dbInstance = mx.edu.utng.cunasegura.data.local.db.AppDatabase.getInstance(applicationContext)
@@ -321,6 +352,11 @@ class PhoneWearableService : WearableListenerService() {
         }
     }
 
+    /**
+     * Procesa una actualización de asignación de toques recibida desde el reloj y la persiste localmente.
+     *
+     * @param payload Cadena con las 4 acciones separadas por tubería `|`.
+     */
     private suspend fun handleConfigUpdate(payload: String) {
         val db = mx.edu.utng.cunasegura.data.local.db.AppDatabase.getInstance(applicationContext)
         val toqueDao = db.configuracionToqueDao()
@@ -340,6 +376,13 @@ class PhoneWearableService : WearableListenerService() {
         }
     }
 
+    /**
+     * Registra un evento de auditoría en la rama `alerts_log` de Firebase Realtime Database.
+     *
+     * @param action Tipo de acción detonada.
+     * @param lat Latitud GPS.
+     * @param lon Longitud GPS.
+     */
     private suspend fun logAlertToFirebase(action: String, lat: Double, lon: Double) {
         try {
             val firebaseUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
@@ -390,6 +433,9 @@ class PhoneWearableService : WearableListenerService() {
         }
     }
 
+    /**
+     * Responde a una solicitud de sincronización enviando la configuración actual hacia los nodos Wear OS conectados.
+     */
     private suspend fun handleConfigSyncRequest() {
         Log.d(TAG, "Recibida solicitud de sincronización de config del reloj")
         try {
@@ -437,3 +483,4 @@ class PhoneWearableService : WearableListenerService() {
         }
     }
 }
+

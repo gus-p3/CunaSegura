@@ -17,9 +17,18 @@ import mx.edu.utng.cunasegura.presentation.devices.DevicesScreen
 import mx.edu.utng.cunasegura.presentation.watchconfig.WatchConfigScreen
 import mx.edu.utng.cunasegura.presentation.tvconfig.TvConfigScreen
 import mx.edu.utng.cunasegura.presentation.map.CommunityMapScreen
-
 import mx.edu.utng.cunasegura.presentation.login.RegisterScreen
 
+/**
+ * Grafo de navegación principal de la aplicación móvil Cuna Segura.
+ *
+ * Configura el [NavHost] con todas las rutas composables de la aplicación y gestiona
+ * el redireccionamiento instantáneo ante eventos de alerta SOS externos ([startAlertaId]).
+ *
+ * @param navController Controlador de navegación de Jetpack Compose.
+ * @param startAlertaId Identificador de alerta SOS recibido por Notificación o Intent externo.
+ * @param onAlertaHandled Callback invocado al consumir el ID de alerta entrante.
+ */
 @Composable
 fun NavGraph(
     navController: NavHostController = rememberNavController(),
@@ -134,4 +143,4 @@ fun NavGraph(
             )
         }
     }
-}
+}

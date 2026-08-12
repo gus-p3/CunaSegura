@@ -14,14 +14,20 @@ import mx.edu.utng.cunasegura.domain.repository.IContactoRepository
 import kotlin.random.Random
 
 /**
- * Implementación de [IContactoRepository] utilizando Firebase Realtime Database como origen de datos.
- * Esto asegura que los contactos de emergencia se guarden en la NUBE y estén asociados al usuario activo.
+ * Implementación de [IContactoRepository] utilizando Firebase Realtime Database como origen de datos en la nube.
+ *
+ * Mantiene la lista de contactos bajo la ruta `/usuarios/{uid}/contactos/` de forma reactiva con [callbackFlow].
  */
 class ContactoRepositoryImpl : IContactoRepository {
 
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseDatabase.getInstance()
 
+    /**
+     * Guarda un nuevo contacto de confianza en la nube bajo el perfil del usuario actual.
+     *
+     * @param contacto Datos del contacto a persistir.
+     */
     override suspend fun agregarContacto(contacto: ContactoEmergencia) {
         val firebaseUser = auth.currentUser ?: return
         val ref = db.getReference("usuarios").child(firebaseUser.uid).child("contactos")
@@ -39,6 +45,11 @@ class ContactoRepositoryImpl : IContactoRepository {
         ref.child(id.toString()).setValue(map).await()
     }
 
+    /**
+     * Elimina un contacto de emergencia de la base de datos remota por su ID.
+     *
+     * @param id Identificador del contacto.
+     */
     override suspend fun eliminarContacto(id: Int) {
         val firebaseUser = auth.currentUser ?: return
         db.getReference("usuarios")
@@ -49,6 +60,12 @@ class ContactoRepositoryImpl : IContactoRepository {
             .await()
     }
 
+    /**
+     * Observa en tiempo real el listado de contactos del usuario mediante un listener de Firebase.
+     *
+     * @param usuarioId Identificador del usuario.
+     * @return [Flow] reactivo con la lista actualizada de contactos de emergencia.
+     */
     override fun obtenerContactos(usuarioId: Int): Flow<List<ContactoEmergencia>> = callbackFlow {
         val firebaseUser = auth.currentUser
         if (firebaseUser == null) {
@@ -86,4 +103,4 @@ class ContactoRepositoryImpl : IContactoRepository {
         ref.addValueEventListener(listener)
         awaitClose { ref.removeEventListener(listener) }
     }
-}
+}

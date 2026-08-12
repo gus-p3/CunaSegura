@@ -14,6 +14,15 @@ import mx.edu.utng.cunasegura.domain.model.Usuario
 import mx.edu.utng.cunasegura.domain.usecase.ActivarAlertaUseCase
 import mx.edu.utng.cunasegura.domain.usecase.ObtenerUsuarioActualUseCase
 
+/**
+ * ViewModel que gestiona la pantalla principal del ciudadano.
+ *
+ * Mantiene la información del usuario en sesión, su red comunitaria, el botón de pánico SOS
+ * y la verificación de políticas de seguridad (antigüedad de miembros `esperarDiasNuevos` y ventana anti-falsa alarma `tiempoAntiFalsa`).
+ *
+ * @property obtenerUsuarioActualUseCase Caso de uso para obtener la sesión activa.
+ * @property activarAlertaUseCase Caso de uso para emitir alertas SOS.
+ */
 class HomeViewModel(
     private val obtenerUsuarioActualUseCase: ObtenerUsuarioActualUseCase,
     private val activarAlertaUseCase: ActivarAlertaUseCase
@@ -38,6 +47,9 @@ class HomeViewModel(
         cargarUsuarioActual()
     }
 
+    /**
+     * Carga el perfil del usuario activo desde SQLite Room y sincroniza datos frescos desde Firebase Realtime Database.
+     */
     private fun cargarUsuarioActual() {
         viewModelScope.launch {
             // Obtenemos el usuario de Room que representa la sesión activa
@@ -106,6 +118,9 @@ class HomeViewModel(
         }
     }
 
+    /**
+     * Limpia el mensaje de error de alerta activa.
+     */
     fun clearErrorAlerta() {
         _errorAlerta.value = null
     }
@@ -161,6 +176,9 @@ class HomeViewModel(
     }
 }
 
+/**
+ * Fábrica para instanciar [HomeViewModel] inyectando casos de uso desde [AppModule].
+ */
 class HomeViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
@@ -173,3 +191,4 @@ class HomeViewModelFactory(private val context: Context) : ViewModelProvider.Fac
         throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")
     }
 }
+

@@ -4,15 +4,23 @@ import mx.edu.utng.cunasegura.domain.model.Alerta
 import mx.edu.utng.cunasegura.domain.repository.IAlertaRepository
 
 /**
- * Caso de uso: Activa una nueva alerta de emergencia en el sistema.
+ * Caso de uso responsable de activar y despachar una nueva alerta de emergencia SOS ciudadana.
+ *
+ * Construye una entidad de dominio [Alerta] con estado inicial `activa` y la persiste a través de [IAlertaRepository].
+ *
+ * @property repository Repositorio de alertas.
  */
 class ActivarAlertaUseCase(
     private val repository: IAlertaRepository
 ) {
     /**
-     * Ejecuta el caso de uso.
-     * Crea una Alerta con estado='activa', fueAtendida=false, esFalsaAlarma=false y la guarda.
-     * @return El ID generado para la alerta.
+     * Ejecuta la activación de la alerta SOS.
+     *
+     * @param usuarioId Identificador del usuario que detona la emergencia.
+     * @param nombreUsuario Nombre visible del vecino.
+     * @param latitud Coordenada GPS de latitud actual.
+     * @param longitud Coordenada GPS de longitud actual.
+     * @return El identificador numérico autogenerado para la alerta.
      */
     suspend operator fun invoke(usuarioId: Int, nombreUsuario: String, latitud: Double, longitud: Double): Long {
         val alerta = Alerta(
@@ -28,3 +36,4 @@ class ActivarAlertaUseCase(
         return repository.crearAlerta(alerta)
     }
 }
+

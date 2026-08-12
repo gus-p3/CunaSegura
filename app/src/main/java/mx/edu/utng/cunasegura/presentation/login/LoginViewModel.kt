@@ -20,7 +20,15 @@ import mx.edu.utng.cunasegura.domain.usecase.GuardarUsuarioUseCase
 import mx.edu.utng.cunasegura.domain.usecase.LimpiarSesionLocalUseCase
 
 /**
- * Estado de la pantalla de Login.
+ * Estado inmutable de la interfaz de usuario para la pantalla de inicio de sesión.
+ *
+ * @property correo Correo electrónico ingresado.
+ * @property password Contraseña de acceso.
+ * @property isLoading Bandera de progreso durante la autenticación remota.
+ * @property errorMessage Mensaje de error de credenciales o red.
+ * @property navigateToHome Bandera de redirección al flujo de vecino común.
+ * @property navigateToAdmin Bandera de redirección al panel de administración.
+ * @property navigateToRegister Bandera de navegación al formulario de registro.
  */
 data class LoginUiState(
     val correo: String = "",
@@ -32,6 +40,16 @@ data class LoginUiState(
     val navigateToRegister: Boolean = false
 )
 
+/**
+ * ViewModel encargado del flujo de autenticación de usuarios y administradores.
+ *
+ * Valida credenciales contra Firebase Authentication, comprueba el estado de la cuenta en Realtime Database,
+ * limpia la sesión local previa y persiste el usuario activo en SQLite Room.
+ *
+ * @property guardarUsuarioUseCase Caso de uso para persistencia local.
+ * @property limpiarSesionLocalUseCase Caso de uso para saneamiento de sesión.
+ * @property context Contexto de la aplicación.
+ */
 class LoginViewModel(
     private val guardarUsuarioUseCase: GuardarUsuarioUseCase,
     private val limpiarSesionLocalUseCase: LimpiarSesionLocalUseCase,
@@ -45,22 +63,37 @@ class LoginViewModel(
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
+    /**
+     * Actualiza el campo de correo y limpia mensajes de error previos.
+     */
     fun onCorreoChange(value: String) {
         _uiState.value = _uiState.value.copy(correo = value, errorMessage = null)
     }
 
+    /**
+     * Actualiza el campo de contraseña.
+     */
     fun onPasswordChange(value: String) {
         _uiState.value = _uiState.value.copy(password = value, errorMessage = null)
     }
 
+    /**
+     * Activa el evento de navegación hacia la pantalla de registro.
+     */
     fun onNavigateToRegister() {
         _uiState.value = _uiState.value.copy(navigateToRegister = true)
     }
     
+    /**
+     * Restablece la bandera tras completar la navegación a registro.
+     */
     fun onRegisterNavigated() {
         _uiState.value = _uiState.value.copy(navigateToRegister = false)
     }
 
+    /**
+     * Ejecuta el proceso de inicio de sesión con Firebase Auth y realiza el ruteo condicional por rol.
+     */
     fun onLoginClick() {
         val correo = _uiState.value.correo.trim()
         val password = _uiState.value.password
@@ -167,7 +200,7 @@ class LoginViewModel(
 }
 
 /**
- * Factory manual: crea LoginViewModel inyectando los UseCases desde AppModule.
+ * Fábrica de ViewModel que inyecta los casos de uso correspondientes mediante [AppModule].
  */
 class LoginViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -181,4 +214,4 @@ class LoginViewModelFactory(private val context: Context) : ViewModelProvider.Fa
         }
         throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")
     }
-}
+}

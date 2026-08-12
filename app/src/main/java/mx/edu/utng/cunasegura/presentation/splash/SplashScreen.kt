@@ -26,6 +26,19 @@ import mx.edu.utng.cunasegura.di.AppModule
 private val AzulOscuro @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
 private val AzulMedio @androidx.compose.runtime.Composable get() = androidx.compose.material3.MaterialTheme.colorScheme.primary
 
+/**
+ * Pantalla inicial de bienvenida (Splash Screen) con animación de pulso y verificación asíncrona de sesión.
+ *
+ * Flujo de redirección:
+ * 1. Si no hay sesión activa en Firebase Auth -> [onNavigateToLogin].
+ * 2. Si la cuenta está en estado `bloqueado` o `suspendido` -> Cierra sesión y va a [onNavigateToLogin].
+ * 3. Si el usuario cuenta con rol `admin` -> [onNavigateToAdmin].
+ * 4. Si el usuario cuenta con rol `usuario` -> [onNavigateToHome].
+ *
+ * @param onNavigateToHome Navega al flujo principal del vecino.
+ * @param onNavigateToLogin Navega a la pantalla de login.
+ * @param onNavigateToAdmin Navega al panel maestro de administración.
+ */
 @Composable
 fun SplashScreen(
     onNavigateToHome: () -> Unit,
@@ -159,4 +172,4 @@ fun SplashScreen(
             }
         }
     }
-}
+}

@@ -5,4 +5,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
+/**
+ * Configuración de tipografía estándar para Material 3 en la aplicación Cuna Segura.
+ */
 val AppTypography = Typography()
+
