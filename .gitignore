@@ -46,4 +46,5 @@ crashlytics-build.properties
 captures/
 
 # Documentation
-docs/
+!docs/
+

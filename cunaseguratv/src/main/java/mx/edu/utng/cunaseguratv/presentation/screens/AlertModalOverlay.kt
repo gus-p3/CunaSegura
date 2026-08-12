@@ -15,13 +15,30 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import mx.edu.utng.cunaseguratv.mqtt.AlertaMqttMessage
 
+/**
+ * Capa emergente superpuesta (Modal Overlay) desplegada a pantalla completa ante una alerta SOS crítica.
+ *
+ * Presenta una animación de parpadeo estroboscópico de color rojo de alto contraste para captar de inmediato
+ * la atención de los residentes u operadores de la televisión en la habitación. Despliega el nombre del vecino,
+ * su identificador, el nivel de toques físicos y sus coordenadas GPS exactas.
+ *
+ * Provee acciones navegables por D-Pad para silenciar la alarma auditiva y descartar el diálogo para navegar
+ * directamente al mapa del incidente.
+ *
+ * @param alerta Datos del mensaje de alerta MQTT [AlertaMqttMessage] que detonó la emergencia.
+ * @param onDescartar Lambda callback para cerrar el modal y enfocar el mapa.
+ * @param onSilenciar Lambda callback para silenciar el tono de sirena auditivo.
+ *
+ * @author Cuna Segura Team
+ * @version 1.0
+ */
 @Composable
 fun AlertModalOverlay(
     alerta: AlertaMqttMessage,
     onDescartar: () -> Unit,
     onSilenciar: () -> Unit
 ) {
-    // Animación de parpadeo rojo
+    // Animación de parpadeo rojo estroboscópico para máxima visibilidad en pantallas 1080p/4K
     val infiniteTransition = rememberInfiniteTransition()
     val alphaAnim by infiniteTransition.animateFloat(
         initialValue = 0.6f,
@@ -82,7 +99,7 @@ fun AlertModalOverlay(
                 Button(
                     onClick = {
                         onSilenciar()
-                        onDescartar() // Opcionalmente ocultar el modal también, o solo silenciar
+                        onDescartar()
                     },
                     colors = ButtonDefaults.colors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
@@ -92,3 +109,4 @@ fun AlertModalOverlay(
         }
     }
 }
+

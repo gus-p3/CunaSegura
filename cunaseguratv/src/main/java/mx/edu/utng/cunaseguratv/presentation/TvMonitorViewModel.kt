@@ -23,8 +23,26 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import java.util.UUID
 
+/**
+ * Modelo de datos ligero para ubicar geográficamente a un vecino en el mapa.
+ *
+ * @property id Identificador único del usuario/vecino en Firebase.
+ * @property nombre Nombre legible del vecino.
+ * @property lat Coordenada de latitud GPS.
+ * @property lon Coordenada de longitud GPS.
+ */
 data class VecinoLocation(val id: String, val nombre: String, val lat: Double, val lon: Double)
 
+/**
+ * Modelo de información detallada de contacto de un vecino de la red comunitaria.
+ *
+ * @property id Identificador único del vecino.
+ * @property nombre Nombre completo del vecino.
+ * @property telefono Número telefónico registrado.
+ * @property correo Correo electrónico del usuario.
+ * @property lat Coordenada de latitud actual.
+ * @property lon Coordenada de longitud actual.
+ */
 data class VecinoInfo(
     val id: String,
     val nombre: String,
@@ -34,6 +52,33 @@ data class VecinoInfo(
     val lon: Double
 )
 
+/**
+ * Estado inmutable de la interfaz de usuario para la pantalla de Android TV.
+ *
+ * Sigue el patrón Unidirectional Data Flow (UDF) exponiendo todos los datos reactivos que
+ * consumen las pantallas [mx.edu.utng.cunaseguratv.presentation.screens.VinculacionScreen],
+ * [mx.edu.utng.cunaseguratv.presentation.screens.DashboardScreen] y
+ * [mx.edu.utng.cunaseguratv.presentation.screens.AlertModalOverlay].
+ *
+ * @property isVinculada Indica si la TV está vinculada activamente a una red vecinal.
+ * @property networkId Identificador de la red vecinal emparejada.
+ * @property networkNombre Nombre legible de la red vecinal.
+ * @property usuarioNombre Nombre del titular o usuario que vinculó la TV.
+ * @property usuarioCorreo Correo electrónico del titular vinculado.
+ * @property usuarioId Identificador del usuario que vinculó la TV.
+ * @property qrCode Imagen [Bitmap] generada con el código QR de vinculación inicial.
+ * @property mqttConnected Estado de conexión TCP/SSL con el Broker MQTT.
+ * @property alertaActiva Alerta SOS de emergencia en curso (despliega modal y sirena sonora).
+ * @property alertasRecientes Lista histórica de alertas registradas en la red vecinal.
+ * @property showAlertModal Controla la visibilidad del modal crítico a pantalla completa.
+ * @property isSilenced Indica si el operador de la TV silenció manualmente la alarma auditiva.
+ * @property vecinosLocations Lista de coordenadas de los vecinos activos para dibujar marcadores.
+ * @property vecinosList Lista de vecinos registrados con información de contacto.
+ * @property colorUsuario Color hexadecimal ARGB para el marcador del usuario vinculado en el mapa.
+ * @property colorVecinos Color hexadecimal ARGB para los marcadores de otros vecinos en el mapa.
+ * @property colorAlertas Color hexadecimal ARGB para el marcador de emergencias SOS en el mapa.
+ * @property showColorPicker Controla la visibilidad del diálogo selector de colores del mapa.
+ */
 data class TvUiState(
     val isVinculada: Boolean = false,
     val networkId: String = "",
@@ -56,9 +101,25 @@ data class TvUiState(
     val showColorPicker: Boolean = false
 )
 
+/**
+ * ViewModel principal de la estación de monitoreo Android TV (Architecture Component).
+ *
+ * Centraliza la lógica de negocio, la orquestación de red y la gestión del estado para la TV:
+ * - Generación local de códigos QR de emparejamiento con ZXing.
+ * - Sincronización en tiempo real mediante Firebase Realtime Database.
+ * - Recepción de eventos push instantáneos vía MQTT (Eclipse Paho).
+ * - Reproducción de sirenas sonoras de emergencia con [MediaPlayer].
+ * - Persistencia de colores y claves en [android.content.SharedPreferences].
+ *
+ * @param application Instancia global de la aplicación Android.
+ *
+ * @author Cuna Segura Team
+ * @version 1.0
+ */
 class TvMonitorViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _state = MutableStateFlow(TvUiState())
+    /** Flujo de estado inmutable público expuesto a la UI de Compose. */
     val state: StateFlow<TvUiState> = _state.asStateFlow()
 
     private val alertMqttFlow = MutableStateFlow<AlertaMqttMessage?>(null)
@@ -78,22 +139,23 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
     private var vecinosListener: ValueEventListener? = null
 
     init {
-        // Cargar colores personalizados guardados previamente
+        // Cargar colores personalizados guardados previamente en SharedPreferences
         cargarColores()
 
         // Inicialmente generar QR de vinculación
         generarQRVinculacion()
         
-        // Conectar a MQTT
+        // Conectar al broker MQTT
         mqttSubscriber.connect()
 
+        // Monitorear el estado de conexión del suscriptor MQTT
         viewModelScope.launch {
             mqttSubscriber.isConnected.collect { connected ->
                 _state.update { it.copy(mqttConnected = connected) }
             }
         }
 
-        // Escuchar alertas instantáneas vía MQTT
+        // Escuchar alertas instantáneas vía MQTT y disparar la alarma sonora
         viewModelScope.launch {
             alertMqttFlow.collect { mqttAlerta ->
                 // Solo reproducir alarma si la TV está vinculada
@@ -163,7 +225,7 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
             }
         }
 
-        // Escuchar vinculaciones vía MQTT
+        // Escuchar vinculaciones vía MQTT despachadas desde el smartphone
         viewModelScope.launch {
             vinculacionMqttFlow.collect { vinculacion ->
                 if (vinculacion != null) {
@@ -177,108 +239,117 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    /**
+     * Suscribe listeners reactivos a los nodos de Firebase correspondientes a la red vecinal,
+     * al titular que vinculó la televisión y a todos los miembros vecinos asociados.
+     *
+     * @param networkId Identificador de la red vecinal a monitorear.
+     * @param linkedBy UID de Firebase del usuario que realizó la vinculación.
+     */
     private fun escucharVecinosYRedFirebase(networkId: String, linkedBy: String?) {
         val db = FirebaseDatabase.getInstance()
 
-        // Limpiar listeners anteriores para evitar conflictos fantasma
+        // Limpiar listeners anteriores para evitar fugas de memoria o conflictos
         netInfoListenerRef?.let { ref -> netInfoListener?.let { l -> ref.removeEventListener(l) } }
         titularListenerRef?.let { ref -> titularListener?.let { l -> ref.removeEventListener(l) } }
         vecinosListenerRef?.let { ref -> vecinosListener?.let { l -> ref.removeEventListener(l) } }
 
-        // 1. Escuchar la información de la red si existe en /networks
+        // 1. Escuchar la información de la red en /networks
         val netRef = db.getReference("networks").child(networkId)
         netInfoListenerRef = netRef
         netInfoListener = object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        val netName = snapshot.child("nombre").getValue(String::class.java) ?: "Red Vecinal"
-                        _state.update { it.copy(networkNombre = netName) }
-                    } else {
-                        // Si no está en /networks, intentar buscar el usuario creador de la red
-                        db.getReference("usuarios").child(networkId).child("nombre").get()
-                            .addOnSuccessListener { userSnap ->
-                                val name = userSnap.getValue(String::class.java)
-                                val defaultNetName = if (!name.isNullOrBlank()) "Red de $name" else "Red Vecinal"
-                                _state.update { it.copy(networkNombre = defaultNetName) }
-                            }
-                    }
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    val netName = snapshot.child("nombre").getValue(String::class.java) ?: "Red Vecinal"
+                    _state.update { it.copy(networkNombre = netName) }
+                } else {
+                    // Si no está en /networks, intentar buscar el nombre del usuario creador
+                    db.getReference("usuarios").child(networkId).child("nombre").get()
+                        .addOnSuccessListener { userSnap ->
+                            val name = userSnap.getValue(String::class.java)
+                            val defaultNetName = if (!name.isNullOrBlank()) "Red de $name" else "Red Vecinal"
+                            _state.update { it.copy(networkNombre = defaultNetName) }
+                        }
                 }
-                override fun onCancelled(error: DatabaseError) {}
             }
+            override fun onCancelled(error: DatabaseError) {}
+        }
         netRef.addValueEventListener(netInfoListener!!)
 
-        // 2. Escuchar usuario vinculador o titular de la red
+        // 2. Escuchar datos del usuario vinculador o titular de la red en /usuarios
         val userToListen = if (!linkedBy.isNullOrEmpty()) linkedBy else networkId
         val titRef = db.getReference("usuarios").child(userToListen)
         titularListenerRef = titRef
         titularListener = object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        val nombre = snapshot.child("nombre").getValue(String::class.java) ?: "Vecino"
-                        val correo = snapshot.child("correo").getValue(String::class.java) ?: ""
-                        _state.update { 
-                            it.copy(
-                                usuarioNombre = nombre,
-                                usuarioCorreo = correo,
-                                usuarioId = userToListen
-                            ) 
-                        }
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    val nombre = snapshot.child("nombre").getValue(String::class.java) ?: "Vecino"
+                    val correo = snapshot.child("correo").getValue(String::class.java) ?: ""
+                    _state.update { 
+                        it.copy(
+                            usuarioNombre = nombre,
+                            usuarioCorreo = correo,
+                            usuarioId = userToListen
+                        ) 
                     }
                 }
-                override fun onCancelled(error: DatabaseError) {}
             }
+            override fun onCancelled(error: DatabaseError) {}
+        }
         titRef.addValueEventListener(titularListener!!)
 
         // 3. Escuchar a todos los vecinos pertenecientes a esta red en /usuarios
         val vecRef = db.getReference("usuarios")
         vecinosListenerRef = vecRef
         vecinosListener = object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val locations = mutableListOf<VecinoLocation>()
-                    val infoList = mutableListOf<VecinoInfo>()
-                    var titularNombre = _state.value.usuarioNombre
-                    var titularCorreo = _state.value.usuarioCorreo
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val locations = mutableListOf<VecinoLocation>()
+                val infoList = mutableListOf<VecinoInfo>()
+                var titularNombre = _state.value.usuarioNombre
+                var titularCorreo = _state.value.usuarioCorreo
 
-                    for (child in snapshot.children) {
-                        val userNetId = child.child("networkId").getValue(String::class.java) ?: ""
-                        val userId = child.key ?: ""
-                        val nombre = child.child("nombre").getValue(String::class.java) ?: "Vecino"
-                        val correo = child.child("correo").getValue(String::class.java) ?: ""
-                        val telefono = child.child("telefono").getValue(String::class.java) ?: ""
-                        val lat = child.child("latActual").getValue(Double::class.java) ?: 0.0
-                        val lon = child.child("lonActual").getValue(Double::class.java) ?: 0.0
-                        val rol = child.child("rol").getValue(String::class.java) ?: "usuario"
+                for (child in snapshot.children) {
+                    val userNetId = child.child("networkId").getValue(String::class.java) ?: ""
+                    val userId = child.key ?: ""
+                    val nombre = child.child("nombre").getValue(String::class.java) ?: "Vecino"
+                    val correo = child.child("correo").getValue(String::class.java) ?: ""
+                    val telefono = child.child("telefono").getValue(String::class.java) ?: ""
+                    val lat = child.child("latActual").getValue(Double::class.java) ?: 0.0
+                    val lon = child.child("lonActual").getValue(Double::class.java) ?: 0.0
 
-                        if (userNetId == networkId || userId == networkId) {
-                            infoList.add(VecinoInfo(userId, nombre, telefono, correo, lat, lon))
-                            if (lat != 0.0 && lon != 0.0) {
-                                locations.add(VecinoLocation(userId, nombre, lat, lon))
-                            }
-                            // Priorizar al usuario que vinculó la TV
-                            if (!linkedBy.isNullOrEmpty() && userId == linkedBy) {
-                                titularNombre = nombre
-                                titularCorreo = correo
-                            } else if (linkedBy.isNullOrEmpty() && (titularNombre.isEmpty() || titularNombre == "Vecino" || userId == networkId)) {
-                                titularNombre = nombre
-                                titularCorreo = correo
-                            }
+                    if (userNetId == networkId || userId == networkId) {
+                        infoList.add(VecinoInfo(userId, nombre, telefono, correo, lat, lon))
+                        if (lat != 0.0 && lon != 0.0) {
+                            locations.add(VecinoLocation(userId, nombre, lat, lon))
+                        }
+                        // Priorizar al usuario que vinculó la TV
+                        if (!linkedBy.isNullOrEmpty() && userId == linkedBy) {
+                            titularNombre = nombre
+                            titularCorreo = correo
+                        } else if (linkedBy.isNullOrEmpty() && (titularNombre.isEmpty() || titularNombre == "Vecino" || userId == networkId)) {
+                            titularNombre = nombre
+                            titularCorreo = correo
                         }
                     }
-                    _state.update { 
-                        it.copy(
-                            vecinosLocations = locations,
-                            vecinosList = infoList,
-                            usuarioNombre = if (titularNombre.isNotBlank()) titularNombre else it.usuarioNombre,
-                            usuarioCorreo = if (titularCorreo.isNotBlank()) titularCorreo else it.usuarioCorreo,
-                            usuarioId = userToListen
-                        ) 
-                    }
                 }
-                override fun onCancelled(error: DatabaseError) {}
+                _state.update { 
+                    it.copy(
+                        vecinosLocations = locations,
+                        vecinosList = infoList,
+                        usuarioNombre = if (titularNombre.isNotBlank()) titularNombre else it.usuarioNombre,
+                        usuarioCorreo = if (titularCorreo.isNotBlank()) titularCorreo else it.usuarioCorreo,
+                        usuarioId = userToListen
+                    ) 
+                }
             }
+            override fun onCancelled(error: DatabaseError) {}
+        }
         vecRef.addValueEventListener(vecinosListener!!)
     }
 
+    /**
+     * Inicializa y reproduce en bucle la alarma auditiva de emergencia del sistema utilizando [RingtoneManager].
+     */
     private fun reproducirAlarma() {
         if (mediaPlayer == null) {
             val context = getApplication<Application>().applicationContext
@@ -289,17 +360,27 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
         mediaPlayer?.start()
     }
 
+    /**
+     * Detiene la reproducción de la sirena auditiva y libera los recursos del [MediaPlayer].
+     */
     private fun detenerAlarma() {
         mediaPlayer?.stop()
         mediaPlayer?.release()
         mediaPlayer = null
     }
 
+    /**
+     * Silencia la alarma sonora activa a petición del usuario de la TV sin descartar el estado de emergencia visual.
+     */
     fun silenciarAlarma() {
         detenerAlarma()
         _state.update { it.copy(isSilenced = true) }
     }
 
+    /**
+     * Cierra la sesión activa de la TV, eliminando el registro del nodo `/tvs/{tvId}` en Firebase,
+     * deteniendo alarmas y regenerando un nuevo código QR de vinculación.
+     */
     fun cerrarSesion() {
         val prefs = getApplication<Application>().getSharedPreferences("CunaSeguraTV", Context.MODE_PRIVATE)
         val tvId = prefs.getString("tvId", null)
@@ -321,6 +402,10 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
         generarQRVinculacion()
     }
 
+    /**
+     * Genera un código QR con ZXing codificando el esquema de Deep Link `cunasegura://vincular?tvId={tvId}`.
+     * Escucha el nodo `/tvs/{tvId}` en Firebase para completar el emparejamiento cuando el móvil escanea el código.
+     */
     private fun generarQRVinculacion() {
         viewModelScope.launch {
             val prefs = getApplication<Application>().getSharedPreferences("CunaSeguraTV", Context.MODE_PRIVATE)
@@ -376,7 +461,12 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
     private var usuarioListenerRef: com.google.firebase.database.DatabaseReference? = null
     private var usuarioListener: ValueEventListener? = null
 
-    // Escucha en tiempo real si el usuario que vinculó esta TV se une o sale de una red vecinal en la app móvil
+    /**
+     * Escucha en tiempo real si el usuario que vinculó esta TV se une o sale de una red vecinal en la app móvil.
+     *
+     * @param tvId Identificador único de la TV.
+     * @param linkedByUid UID del usuario en Firebase.
+     */
     private fun escucharCambiosRedUsuario(tvId: String, linkedByUid: String) {
         usuarioListenerRef?.let { ref ->
             usuarioListener?.let { l -> ref.removeEventListener(l) }
@@ -398,6 +488,13 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
         userNetRef.addValueEventListener(usuarioListener!!)
     }
 
+    /**
+     * Ejecuta el proceso de vinculación exitosa con la red vecinal especificada.
+     * Configura el tópico MQTT, inicia la sincronización de vecinos y actualiza el estado de la UI.
+     *
+     * @param networkId Identificador de la red vecinal vinculada.
+     * @param linkedBy Identificador del usuario que autorizó la vinculación.
+     */
     fun simularVinculacionExitosa(networkId: String = "RED-VECINAL-123", linkedBy: String? = null) {
         mqttSubscriber.setNetworkId(networkId)
         escucharVecinosYRedFirebase(networkId, linkedBy)
@@ -410,14 +507,27 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    /**
+     * Oculta el modal de emergencia SOS a pantalla completa para permitir la interacción directa con el mapa.
+     */
     fun descartarModalAlerta() {
         _state.update { it.copy(showAlertModal = false) }
     }
 
+    /**
+     * Alterna la visibilidad del diálogo de personalización de colores para marcadores del mapa.
+     */
     fun toggleColorPicker() {
         _state.update { it.copy(showColorPicker = !it.showColorPicker) }
     }
 
+    /**
+     * Guarda la selección de colores personalizada para marcadores del mapa en [SharedPreferences] y actualiza el estado.
+     *
+     * @param colorUsuario Color para el titular vinculado.
+     * @param colorVecinos Color para otros vecinos de la red.
+     * @param colorAlertas Color para alertas de emergencia SOS.
+     */
     fun guardarColores(colorUsuario: Int, colorVecinos: Int, colorAlertas: Int) {
         val prefs = getApplication<Application>().getSharedPreferences("mapa_colores", android.content.Context.MODE_PRIVATE)
         prefs.edit()
@@ -428,6 +538,9 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
         _state.update { it.copy(colorUsuario = colorUsuario, colorVecinos = colorVecinos, colorAlertas = colorAlertas, showColorPicker = false) }
     }
 
+    /**
+     * Carga los colores personalizados para marcadores del mapa almacenados en [SharedPreferences].
+     */
     fun cargarColores() {
         val prefs = getApplication<Application>().getSharedPreferences("mapa_colores", android.content.Context.MODE_PRIVATE)
         val colorU = prefs.getInt("colorUsuario", android.graphics.Color.parseColor("#2196F3"))
@@ -436,9 +549,13 @@ class TvMonitorViewModel(application: Application) : AndroidViewModel(applicatio
         _state.update { it.copy(colorUsuario = colorU, colorVecinos = colorV, colorAlertas = colorA) }
     }
 
+    /**
+     * Se invoca cuando el ViewModel es destruido. Desconecta el cliente MQTT y detiene la alarma activa.
+     */
     override fun onCleared() {
         super.onCleared()
         mqttSubscriber.disconnect()
         detenerAlarma()
     }
 }
+
