@@ -15,6 +15,17 @@ import mx.edu.utng.cunasegura.domain.model.Alerta
 import mx.edu.utng.cunasegura.domain.repository.IAlertaRepository
 import mx.edu.utng.cunasegura.domain.usecase.CancelarAlertaUseCase
 
+/**
+ * ViewModel que controla la pantalla de emergencia activa.
+ *
+ * Muestra el estado del incidente, número de contactos notificados y ejecuta una cuenta regresiva visual
+ * mientras permite cancelar la alerta si se trató de una falsa alarma.
+ *
+ * @property alertaId Identificador de la alerta activa en curso.
+ * @property alertaRepository Repositorio de alertas.
+ * @property contactoDao DAO para contar contactos de confianza.
+ * @property cancelarAlertaUseCase Caso de uso para cancelación de alerta.
+ */
 class EmergencyViewModel(
     private val alertaId: Int,
     private val alertaRepository: IAlertaRepository,
@@ -39,6 +50,9 @@ class EmergencyViewModel(
         iniciarCuentaRegresiva()
     }
 
+    /**
+     * Recupera el detalle de la alerta y cuenta los contactos de auxilio asociados.
+     */
     private fun cargarAlertaYContactos() {
         viewModelScope.launch {
             val alert = alertaRepository.obtenerAlertaPorId(alertaId)
@@ -51,6 +65,9 @@ class EmergencyViewModel(
         }
     }
 
+    /**
+     * Inicia una cuenta regresiva de 8 segundos en corrutina para el estado de notificación.
+     */
     private fun iniciarCuentaRegresiva() {
         viewModelScope.launch {
             for (sec in (0..7).reversed()) {
@@ -61,6 +78,9 @@ class EmergencyViewModel(
         }
     }
 
+    /**
+     * Ejecuta la cancelación de la alerta activa y actualiza el estado de la UI.
+     */
     fun cancelarAlerta() {
         viewModelScope.launch {
             cancelarAlertaUseCase(alertaId)
@@ -69,6 +89,9 @@ class EmergencyViewModel(
     }
 }
 
+/**
+ * Fábrica para instanciar [EmergencyViewModel] con el ID de la alerta correspondiente.
+ */
 class EmergencyViewModelFactory(
     private val context: Context,
     private val alertaId: Int
@@ -86,3 +109,4 @@ class EmergencyViewModelFactory(
         throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")
     }
 }
+

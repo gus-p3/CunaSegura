@@ -13,6 +13,14 @@ import mx.edu.utng.cunasegura.di.AppModule
 import mx.edu.utng.cunasegura.domain.model.Usuario
 import mx.edu.utng.cunasegura.domain.usecase.ObtenerUsuarioActualUseCase
 
+/**
+ * ViewModel para la pantalla de Dispositivos Vinculados (SmartWatch Wear OS y Smart TV comunitaria).
+ *
+ * Expone el estado del usuario activo y el conteo de contactos registrados.
+ *
+ * @property obtenerUsuarioActualUseCase Caso de uso para obtener el usuario autenticado.
+ * @property contactoDao DAO para consultar contactos registrados.
+ */
 class DevicesViewModel(
     private val obtenerUsuarioActualUseCase: ObtenerUsuarioActualUseCase,
     private val contactoDao: ContactoDao
@@ -28,6 +36,9 @@ class DevicesViewModel(
         cargarDatos()
     }
 
+    /**
+     * Carga el usuario activo y consulta el número de contactos asociados.
+     */
     private fun cargarDatos() {
         viewModelScope.launch {
             val user = obtenerUsuarioActualUseCase()
@@ -41,6 +52,9 @@ class DevicesViewModel(
     }
 }
 
+/**
+ * Fábrica para instanciar [DevicesViewModel] inyectando casos de uso desde [AppModule].
+ */
 class DevicesViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(DevicesViewModel::class.java)) {
@@ -53,3 +67,4 @@ class DevicesViewModelFactory(private val context: Context) : ViewModelProvider.
         throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")
     }
 }
+

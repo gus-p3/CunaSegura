@@ -7,69 +7,86 @@ import androidx.room.Query
 import mx.edu.utng.cunasegura.data.local.entity.UsuarioEntity
 
 /**
- * DAO para operaciones sobre la tabla de usuarios.
+ * Data Access Object (DAO) para operaciones de persistencia en la tabla `usuarios`.
  */
 @Dao
 interface UsuarioDao {
 
     /**
-     * Inserta un usuario. Si ya existe (mismo id), lo reemplaza.
-     * @return el rowId del usuario insertado.
+     * Inserta un usuario en la base de datos local. Si ya existe, reemplaza el registro.
+     *
+     * @param usuario Entidad del usuario a persistir.
+     * @return El rowId asignado en la base de datos SQLite.
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertarUsuario(usuario: UsuarioEntity): Long
 
     /**
-     * Busca un usuario por número de teléfono.
-     * @return [UsuarioEntity] si existe, null si no.
+     * Busca un usuario por su número de teléfono.
+     *
+     * @param telefono Número de teléfono de 10 dígitos.
+     * @return [UsuarioEntity] coincidente o `null` si no existe.
      */
     @Query("SELECT * FROM usuarios WHERE telefono = :telefono LIMIT 1")
     suspend fun buscarPorTelefono(telefono: String): UsuarioEntity?
 
     /**
-     * Busca un usuario por correo electrónico.
-     * Usado para el login de administrador.
+     * Busca un usuario por su dirección de correo electrónico.
+     *
+     * @param correo Dirección de correo electrónico registrada.
+     * @return [UsuarioEntity] coincidente o `null` si no se encuentra.
      */
     @Query("SELECT * FROM usuarios WHERE correo = :correo LIMIT 1")
     suspend fun buscarPorCorreo(correo: String): UsuarioEntity?
 
     /**
-     * Valida credenciales de administrador por correo y contraseña.
-     * @return [UsuarioEntity] si las credenciales son correctas, null si no.
+     * Valida credenciales de autenticación para administradores con rol `admin`.
+     *
+     * @param correo Correo electrónico del administrador.
+     * @param password Contraseña de acceso.
+     * @return [UsuarioEntity] del administrador si las credenciales son válidas, `null` en caso contrario.
      */
     @Query("SELECT * FROM usuarios WHERE correo = :correo AND password = :password AND rol = 'admin' LIMIT 1")
     suspend fun validarAdmin(correo: String, password: String): UsuarioEntity?
 
     /**
-     * Valida credenciales de login genérico por correo y contraseña.
-     * @return [UsuarioEntity] si las credenciales son correctas, null si no.
+     * Valida credenciales de inicio de sesión genéricas para cualquier usuario.
+     *
+     * @param correo Correo electrónico del usuario.
+     * @param password Contraseña de acceso.
+     * @return [UsuarioEntity] si coincide, `null` si las credenciales son erróneas.
      */
     @Query("SELECT * FROM usuarios WHERE correo = :correo AND password = :password LIMIT 1")
     suspend fun validarLogin(correo: String, password: String): UsuarioEntity?
 
     /**
-     * Retorna el primer usuario registrado en el dispositivo (sesión activa).
-     * Como esta app maneja un solo usuario por teléfono, sirve para el Splash.
+     * Obtiene el usuario local actualmente guardado (sesión activa del dispositivo).
+     *
+     * @return [UsuarioEntity] del usuario principal local o `null` si no hay sesión iniciada.
      */
     @Query("SELECT * FROM usuarios LIMIT 1")
     suspend fun obtenerUsuarioActual(): UsuarioEntity?
 
     /**
-     * Retorna todos los usuarios registrados. Solo accesible para el admin.
+     * Retorna la lista completa de usuarios registrados localmente, ordenada alfabéticamente.
+     *
+     * @return Lista de [UsuarioEntity].
      */
     @Query("SELECT * FROM usuarios ORDER BY nombre ASC")
     suspend fun obtenerTodosLosUsuarios(): List<UsuarioEntity>
 
     /**
-     * Cuenta el total de usuarios registrados.
+     * Cuenta el total de registros de usuarios en la tabla local.
+     *
+     * @return Cantidad entera de usuarios.
      */
     @Query("SELECT COUNT(*) FROM usuarios")
     suspend fun contarUsuarios(): Int
 
     /**
-     * Elimina todos los usuarios locales.
-     * Útil para limpiar la sesión antes de un nuevo login.
+     * Elimina todos los registros de usuarios locales para cerrar sesión limpiamente.
      */
     @Query("DELETE FROM usuarios")
     suspend fun eliminarTodos()
 }
+

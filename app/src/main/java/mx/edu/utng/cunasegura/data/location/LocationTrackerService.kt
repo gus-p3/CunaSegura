@@ -22,6 +22,15 @@ import mx.edu.utng.cunasegura.MainActivity
 import mx.edu.utng.cunasegura.R
 import mx.edu.utng.cunasegura.data.local.prefs.PreferencesManager
 
+/**
+ * Servicio en primer plano (Foreground Service) encargado del rastreo GPS continuo y la escucha de alertas SOS en tiempo real.
+ *
+ * Responsabilidades:
+ * - Mantener activo el proceso en segundo plano con notificación persistente ([NotificationCompat.Builder]).
+ * - Solicitar actualizaciones periódicas de coordenadas mediante [FusedLocationProviderClient].
+ * - Sincronizar las coordenadas (`latActual`, `lonActual`) del usuario en Firebase Realtime Database.
+ * - Escuchar eventos de alerta entrantes en la rama `alerts_log` de Firebase y disparar notificaciones de máxima prioridad con alarma sonora.
+ */
 class LocationTrackerService : Service() {
 
     private val CHANNEL_ID = "LocationTrackerChannel"
@@ -29,6 +38,9 @@ class LocationTrackerService : Service() {
     private lateinit var locationCallback: LocationCallback
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
+    /**
+     * Inicializa el canal de notificación, cliente de ubicación y listeners de Firebase.
+     */
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
@@ -37,6 +49,14 @@ class LocationTrackerService : Service() {
         setupAlertsLogListener()
     }
 
+    /**
+     * Inicia el Foreground Service y activa las actualizaciones periódicas de GPS.
+     *
+     * @param intent Intent que inició el servicio.
+     * @param flags Banderas de inicio.
+     * @param startId Identificador de llamada.
+     * @return [START_STICKY] para garantizar que el sistema Android reinicie el servicio si es eliminado por memoria.
+     */
     @SuppressLint("MissingPermission")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val notificationIntent = Intent(this, MainActivity::class.java)
@@ -71,6 +91,9 @@ class LocationTrackerService : Service() {
         return START_STICKY
     }
 
+    /**
+     * Configura el callback que recibe nuevas ubicaciones GPS del dispositivo.
+     */
     private fun setupLocationCallback() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
@@ -82,6 +105,9 @@ class LocationTrackerService : Service() {
         }
     }
 
+    /**
+     * Solicita al proveedor de ubicación de Google Play Services actualizaciones de alta precisión cada 5 minutos.
+     */
     @SuppressLint("MissingPermission")
     private fun requestLocationUpdates() {
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5 * 60 * 1000L) // 5 minutes
@@ -95,6 +121,12 @@ class LocationTrackerService : Service() {
         )
     }
 
+    /**
+     * Actualiza las coordenadas actuales del usuario autenticado en la rama `/usuarios/{uid}` de Firebase Realtime Database.
+     *
+     * @param lat Coordenada de latitud.
+     * @param lon Coordenada de longitud.
+     */
     private fun updateLocationInFirebase(lat: Double, lon: Double) {
         serviceScope.launch {
             val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
@@ -113,12 +145,18 @@ class LocationTrackerService : Service() {
         return null
     }
 
+    /**
+     * Libera listeners de geolocalización y Firebase al destruirse el servicio.
+     */
     override fun onDestroy() {
         super.onDestroy()
         fusedLocationClient.removeLocationUpdates(locationCallback)
         removeAlertsLogListener()
     }
 
+    /**
+     * Crea el canal de notificación persistente para Foreground Service en Android 8.0+.
+     */
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val serviceChannel = NotificationChannel(
@@ -135,6 +173,10 @@ class LocationTrackerService : Service() {
     private var currentUserNetworkId: String? = null
     private var networkIdListener: com.google.firebase.database.ValueEventListener? = null
 
+    /**
+     * Establece listeners en Firebase Realtime Database para monitorear el `networkId` del usuario
+     * y detectar alertas activas de vecinos en tiempo real mediante `alerts_log`.
+     */
     private fun setupAlertsLogListener() {
         val authUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser ?: return
         val currentUid = authUser.uid
@@ -167,7 +209,7 @@ class LocationTrackerService : Service() {
                     // Validar:
                     // - No es el usuario actual
                     // - Es de la misma red vecinal
-                    // - Es reciente (menos de 45 segundos)
+                    // - Es reciente (menos de 3 minutos)
                     val isRecent = Math.abs(System.currentTimeMillis() - timestamp) < 180000 // 3 minutos
                     val isSameNetwork = currentUserNetworkId.isNullOrEmpty() || alertNetworkId.isEmpty() || alertNetworkId == currentUserNetworkId || alertNetworkId == currentUid || currentUserNetworkId == alertUid
                     val isDifferentUser = alertUid.isNotEmpty() && alertUid != currentUid
@@ -190,6 +232,9 @@ class LocationTrackerService : Service() {
         database.getReference("alerts_log").addChildEventListener(alertsLogListener!!)
     }
 
+    /**
+     * Remueve los listeners de Firebase cuando el servicio se detiene.
+     */
     private fun removeAlertsLogListener() {
         val database = FirebaseDatabase.getInstance()
         val authUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
@@ -202,6 +247,13 @@ class LocationTrackerService : Service() {
         }
     }
 
+    /**
+     * Despliega una notificación de emergencia de máxima prioridad con patrón de vibración
+     * y sonido de alarma cuando un vecino detona un SOS.
+     *
+     * @param vecinoNombre Nombre del vecino emisor.
+     * @param nivel Nivel de urgencia o número de toques del reloj.
+     */
     private fun showEmergencyNotification(vecinoNombre: String, nivel: Int) {
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -248,3 +300,4 @@ class LocationTrackerService : Service() {
         notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
     }
 }
+

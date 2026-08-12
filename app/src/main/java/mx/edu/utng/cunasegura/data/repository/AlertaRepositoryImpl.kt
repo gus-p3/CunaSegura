@@ -16,8 +16,10 @@ import android.util.Log
 import kotlinx.coroutines.tasks.await
 
 /**
- * Implementación de [IAlertaRepository] que interactúa con Room a través de [AlertaDao]
- * y sincroniza las alertas con Firebase Realtime Database.
+ * Implementación híbrida de [IAlertaRepository] que persiste localmente en SQLite Room mediante [AlertaDao],
+ * sincroniza en tiempo real con Firebase Realtime Database y dispara mensajes de emergencia MQTT a Smart TVs.
+ *
+ * @property alertaDao DAO de alertas para persistencia local offline-first.
  */
 class AlertaRepositoryImpl(
     private val alertaDao: AlertaDao
@@ -26,6 +28,12 @@ class AlertaRepositoryImpl(
     private val dbRef = FirebaseDatabase.getInstance().getReference("alertas")
     private val TAG = "AlertaRepository"
 
+    /**
+     * Inserta una alerta SOS en la base de datos local y la publica tanto en Firebase como en el broker MQTT.
+     *
+     * @param alerta Datos de la alerta emitida.
+     * @return Identificador asignado a la alerta.
+     */
     override suspend fun crearAlerta(alerta: Alerta): Long {
         var id = System.currentTimeMillis() % 1000000
         try {
@@ -104,6 +112,11 @@ class AlertaRepositoryImpl(
         return id
     }
 
+    /**
+     * Cancela la alerta tanto en Room como en Firebase y notifica el cese de alarma a las Smart TVs vía MQTT.
+     *
+     * @param id Identificador de la alerta a cancelar.
+     */
     override suspend fun cancelarAlerta(id: Int) {
         try {
             alertaDao.actualizarEstado(id = id, estado = "cancelada")
@@ -152,16 +165,33 @@ class AlertaRepositoryImpl(
         }
     }
 
+    /**
+     * Busca una alerta en la base de datos local por su ID.
+     *
+     * @param id Identificador de la alerta.
+     * @return [Alerta] si existe o `null`.
+     */
     override suspend fun obtenerAlertaPorId(id: Int): Alerta? {
         return alertaDao.buscarPorId(id)?.toDomain()
     }
 
+    /**
+     * Observa de forma reactiva la alerta activa del usuario especificado.
+     *
+     * @param usuarioId ID del usuario.
+     * @return [Flow] con la entidad [Alerta] o `null`.
+     */
     override fun obtenerAlertaActiva(usuarioId: Int): Flow<Alerta?> {
         return alertaDao.obtenerAlertaActivaPorUsuario(usuarioId).map { entity ->
             entity?.toDomain()
         }
     }
 
+    /**
+     * Escucha en tiempo real todas las alertas activas en Firebase y aplica el filtro temporal `tiempoVidaAlerta`.
+     *
+     * @return [Flow] reactivo con la lista de alertas vigentes.
+     */
     override fun obtenerAlertasVecinalesActivas(): Flow<List<Alerta>> = callbackFlow {
         // Fetch config once when flow starts
         var tiempoVidaMs = 720L * 60 * 1000 // 720 minutes default (12h)
@@ -222,6 +252,11 @@ class AlertaRepositoryImpl(
         awaitClose { dbRef.removeEventListener(listener) }
     }
 
+    /**
+     * Consulta el catálogo total de alertas históricas en Firebase.
+     *
+     * @return Lista completa de [Alerta].
+     */
     override suspend fun obtenerTodasLasAlertas(): List<Alerta> {
         return try {
             val snapshot = dbRef.get().await()
@@ -247,6 +282,12 @@ class AlertaRepositoryImpl(
         }
     }
 
+    /**
+     * Consulta las alertas asociadas a una red vecinal comunitaria filtradas por su vigencia.
+     *
+     * @param networkId Identificador de la red vecinal.
+     * @return Lista de alertas de la comunidad ordenadas cronológicamente.
+     */
     override suspend fun obtenerAlertasPorNetworkId(networkId: String): List<Alerta> {
         return try {
             val snapshot = dbRef.get().await()
@@ -320,3 +361,4 @@ class AlertaRepositoryImpl(
             creadoEn = this.creadoEn
         )
 }
+

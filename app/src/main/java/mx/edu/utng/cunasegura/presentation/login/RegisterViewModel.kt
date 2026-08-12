@@ -18,6 +18,18 @@ import mx.edu.utng.cunasegura.domain.model.Usuario
 import mx.edu.utng.cunasegura.domain.usecase.GuardarUsuarioUseCase
 import mx.edu.utng.cunasegura.domain.usecase.LimpiarSesionLocalUseCase
 
+/**
+ * Estado inmutable del formulario de registro de nuevos ciudadanos.
+ *
+ * @property nombre Nombre completo del usuario.
+ * @property telefono Teléfono celular de 10 dígitos.
+ * @property correo Correo electrónico para la cuenta.
+ * @property password Contraseña elegida.
+ * @property confirmPassword Confirmación de contraseña.
+ * @property isLoading Bandera de progreso durante el alta en Firebase.
+ * @property errorMessage Mensaje de validación o error de red.
+ * @property registerSuccess Bandera que indica éxito en la creación de cuenta.
+ */
 data class RegisterUiState(
     val nombre: String = "",
     val telefono: String = "",
@@ -29,6 +41,15 @@ data class RegisterUiState(
     val registerSuccess: Boolean = false
 )
 
+/**
+ * ViewModel encargado del registro de nuevos usuarios en el sistema.
+ *
+ * Crea la cuenta en Firebase Authentication, actualiza el perfil en Realtime Database y almacena
+ * la sesión activa en el repositorio local.
+ *
+ * @property guardarUsuarioUseCase Caso de uso para persistir los datos del usuario.
+ * @property limpiarSesionLocalUseCase Caso de uso para limpiar sesiones anteriores.
+ */
 class RegisterViewModel(
     private val guardarUsuarioUseCase: GuardarUsuarioUseCase,
     private val limpiarSesionLocalUseCase: LimpiarSesionLocalUseCase
@@ -40,27 +61,45 @@ class RegisterViewModel(
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
 
+    /**
+     * Actualiza el nombre ingresado.
+     */
     fun onNombreChange(value: String) {
         _uiState.value = _uiState.value.copy(nombre = value, errorMessage = null)
     }
 
+    /**
+     * Actualiza y normaliza el número de teléfono limitándolo a 10 dígitos numéricos.
+     */
     fun onTelefonoChange(value: String) {
         val digitsOnly = value.filter { it.isDigit() }.take(10)
         _uiState.value = _uiState.value.copy(telefono = digitsOnly, errorMessage = null)
     }
 
+    /**
+     * Actualiza el correo electrónico ingresado.
+     */
     fun onCorreoChange(value: String) {
         _uiState.value = _uiState.value.copy(correo = value, errorMessage = null)
     }
 
+    /**
+     * Actualiza la contraseña.
+     */
     fun onPasswordChange(value: String) {
         _uiState.value = _uiState.value.copy(password = value, errorMessage = null)
     }
 
+    /**
+     * Actualiza el campo de confirmación de contraseña.
+     */
     fun onConfirmPasswordChange(value: String) {
         _uiState.value = _uiState.value.copy(confirmPassword = value, errorMessage = null)
     }
 
+    /**
+     * Valida los campos del formulario y ejecuta la creación de cuenta en Firebase y Room.
+     */
     fun onRegisterClick() {
         val state = _uiState.value
         val nombre = state.nombre.trim()
@@ -148,6 +187,9 @@ class RegisterViewModel(
     }
 }
 
+/**
+ * Fábrica para instanciar [RegisterViewModel] resolviendo casos de uso mediante [AppModule].
+ */
 class RegisterViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(RegisterViewModel::class.java)) {
@@ -160,3 +202,4 @@ class RegisterViewModelFactory(private val context: Context) : ViewModelProvider
         throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")
     }
 }
+

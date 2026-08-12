@@ -17,6 +17,16 @@ import mx.edu.utng.cunasegura.domain.repository.IAlertaRepository
 import mx.edu.utng.cunasegura.domain.repository.INetworkRepository
 import mx.edu.utng.cunasegura.domain.repository.IUsuarioRepository
 
+/**
+ * ViewModel maestro para la consola y paneles de control del Administrador Global.
+ *
+ * Administra el censo global de usuarios, monitoreo de alertas de todas las redes, cambios de estado de cuentas (`bloqueado`, `activo`)
+ * y guardado de parámetros globales del sistema (`configuracion_global`).
+ *
+ * @property usuarioRepository Repositorio de usuarios.
+ * @property alertaRepository Repositorio de alertas.
+ * @property networkRepository Repositorio de redes comunitarias.
+ */
 class AdminViewModel(
     private val usuarioRepository: IUsuarioRepository,
     private val alertaRepository: IAlertaRepository,
@@ -48,6 +58,9 @@ class AdminViewModel(
         cargarDatos()
     }
 
+    /**
+     * Consulta el catálogo total de usuarios, datos del administrador, red asignada, alertas y configuración global.
+     */
     private fun cargarDatos() {
         viewModelScope.launch {
             try {
@@ -81,8 +94,14 @@ class AdminViewModel(
         }
     }
 
+    /**
+     * Fuerza una recarga completa de todos los datos administrativos.
+     */
     fun recargar() = cargarDatos()
 
+    /**
+     * Persiste los parámetros globales de red y directivas de seguridad en Firebase.
+     */
     fun guardarRedConfig(
         tipo: String,
         radio: Double,
@@ -119,6 +138,12 @@ class AdminViewModel(
         }
     }
 
+    /**
+     * Modifica el estado operativo de una cuenta de usuario (`activo`, `bloqueado`).
+     *
+     * @param uid Identificador del usuario.
+     * @param nuevoEstado Estado a establecer.
+     */
     fun cambiarEstadoUsuario(uid: String, nuevoEstado: String) {
         viewModelScope.launch {
             try {
@@ -132,11 +157,17 @@ class AdminViewModel(
         }
     }
 
+    /**
+     * Limpia el mensaje informativo de estado.
+     */
     fun clearStatusMessage() {
         _statusMessage.value = null
     }
 }
 
+/**
+ * Fábrica para instanciar [AdminViewModel] resolviendo repositorios mediante [AppModule].
+ */
 class AdminViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AdminViewModel::class.java)) {
@@ -150,3 +181,4 @@ class AdminViewModelFactory(private val context: Context) : ViewModelProvider.Fa
         throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")
     }
 }
+

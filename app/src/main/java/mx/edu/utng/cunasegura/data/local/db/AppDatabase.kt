@@ -18,12 +18,16 @@ import mx.edu.utng.cunasegura.data.local.entity.ContactoEmergenciaEntity
 import mx.edu.utng.cunasegura.data.local.entity.UsuarioEntity
 
 /**
- * Base de datos local de CunaSegura usando Room.
+ * Base de datos principal de la aplicación móvil Cuna Segura implementada con Room SQLite.
  *
- * Versión 3: cambia tipoAccion de texto libre a nombres del enum (MENSAJE_SMS, etc.).
- * Nota (Sprint 1): Se usa fallbackToDestructiveMigration(), lo cual borrará
- * los datos existentes (esto es aceptable por ahora ya que no hay usuarios en prod).
- * Singleton: obtener la instancia a través de [AppDatabase.getInstance].
+ * Entidades gestionadas:
+ * - [UsuarioEntity]: Información de perfil, credenciales y geolocalización.
+ * - [AlertaEntity]: Registro y estados de alertas de pánico ciudadanas.
+ * - [ContactoEmergenciaEntity]: Directorio de contactos de auxilio.
+ * - [ConfiguracionToqueEntity]: Configuración de acciones por gestos/toques de smartwatch.
+ *
+ * Implementa el patrón Singleton thread-safe mediante doble comprobación sincronizada y
+ * realiza el sembrado inicial (seed) de la cuenta de administrador global mediante [AdminSeedCallback].
  */
 @Database(
     entities = [
@@ -37,15 +41,22 @@ import mx.edu.utng.cunasegura.data.local.entity.UsuarioEntity
 )
 abstract class AppDatabase : RoomDatabase() {
 
+    /** Provee el DAO para operaciones sobre usuarios. */
     abstract fun usuarioDao(): UsuarioDao
+
+    /** Provee el DAO para operaciones sobre alertas ciudadanas. */
     abstract fun alertaDao(): AlertaDao
+
+    /** Provee el DAO para operaciones sobre contactos de emergencia. */
     abstract fun contactoDao(): ContactoDao
+
+    /** Provee el DAO para operaciones sobre configuraciones de toques. */
     abstract fun configuracionToqueDao(): ConfiguracionToqueDao
 
     companion object {
         private const val DATABASE_NAME = "cuna_segura.db"
 
-        // Credenciales del administrador global
+        // Credenciales por defecto del administrador global para entorno de pruebas y auditoría
         const val ADMIN_CORREO = "brandon@gmail.com"
         const val ADMIN_PASSWORD = "123456789"
         const val ADMIN_NOMBRE = "Brandon Admin"
@@ -55,8 +66,10 @@ abstract class AppDatabase : RoomDatabase() {
         private var INSTANCE: AppDatabase? = null
 
         /**
-         * Retorna la instancia singleton de [AppDatabase].
-         * Hilo-seguro gracias a doble comprobación con bloque `synchronized`.
+         * Retorna la instancia única (Singleton) de [AppDatabase].
+         *
+         * @param context Contexto de la aplicación Android.
+         * @return Instancia única de la base de datos Room.
          */
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -74,13 +87,12 @@ abstract class AppDatabase : RoomDatabase() {
     }
 
     /**
-     * Callback que inserta el usuario administrador la primera vez que
-     * se crea la base de datos (instalación limpia).
+     * Callback de inicialización que inserta automáticamente el usuario administrador
+     * en el hilo de E/S ([Dispatchers.IO]) la primera vez que se crea la base de datos.
      */
     private class AdminSeedCallback : RoomDatabase.Callback() {
         override fun onCreate(db: SupportSQLiteDatabase) {
             super.onCreate(db)
-            // Insertar admin en un hilo de IO para no bloquear el main thread
             CoroutineScope(Dispatchers.IO).launch {
                 INSTANCE?.usuarioDao()?.insertarUsuario(
                     UsuarioEntity(
@@ -96,3 +108,4 @@ abstract class AppDatabase : RoomDatabase() {
         }
     }
 }
+

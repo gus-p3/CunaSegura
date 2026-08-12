@@ -6,19 +6,40 @@ import mx.edu.utng.cunasegura.domain.model.Network
 import mx.edu.utng.cunasegura.domain.model.Usuario
 import mx.edu.utng.cunasegura.domain.repository.INetworkRepository
 
+/**
+ * Implementación de [INetworkRepository] conectada con Firebase Realtime Database.
+ *
+ * Administra los nodos `/networks/{networkId}`, `/configuracion_global` y sincroniza las membresías de los usuarios.
+ */
 class NetworkRepositoryImpl : INetworkRepository {
     private val db = FirebaseDatabase.getInstance()
 
+    /**
+     * Guarda una nueva red vecinal comunitaria en Firebase.
+     *
+     * @param network Modelo de la red.
+     */
     override suspend fun crearNetwork(network: Network) {
         db.getReference("networks").child(network.id).setValue(network).await()
     }
 
+    /**
+     * Consulta una red vecinal por su identificador único.
+     *
+     * @param id Identificador de la red.
+     * @return [Network] o `null` si no existe.
+     */
     override suspend fun obtenerNetworkPorId(id: String): Network? {
         val snapshot = db.getReference("networks").child(id).get().await()
         if (!snapshot.exists()) return null
         return snapshot.getValue(Network::class.java)
     }
 
+    /**
+     * Obtiene el listado de redes comunitarias públicas/abiertas basadas en geolocalización.
+     *
+     * @return Lista de redes de tipo `Abierta`.
+     */
     override suspend fun obtenerRedesAbiertas(): List<Network> {
         val snapshot = db.getReference("networks")
             .orderByChild("tipo")
@@ -28,6 +49,13 @@ class NetworkRepositoryImpl : INetworkRepository {
         return snapshot.children.mapNotNull { it.getValue(Network::class.java) }
     }
 
+    /**
+     * Vincula a un usuario como miembro de una red vecinal.
+     *
+     * @param usuarioId UID del usuario en Firebase.
+     * @param networkId ID de la red vecinal.
+     * @return `true` si la operación se completó exitosamente.
+     */
     override suspend fun unirseARed(usuarioId: String, networkId: String): Boolean {
         return try {
             // 1. Agregar el usuario a la lista de miembros de la red
@@ -53,6 +81,13 @@ class NetworkRepositoryImpl : INetworkRepository {
         }
     }
 
+    /**
+     * Desvincula a un usuario de su red vecinal actual.
+     *
+     * @param usuarioId UID del usuario.
+     * @param networkId ID de la red actual.
+     * @return `true` si se desvinculó con éxito.
+     */
     override suspend fun salirDeRed(usuarioId: String, networkId: String): Boolean {
         return try {
             // 1. Remover de miembros de la red
@@ -75,6 +110,12 @@ class NetworkRepositoryImpl : INetworkRepository {
         }
     }
 
+    /**
+     * Obtiene el listado completo de vecinos que integran una red vecinal específica.
+     *
+     * @param networkId ID de la red comunitaria.
+     * @return Lista de [Usuario] que pertenecen a la red.
+     */
     override suspend fun obtenerMiembrosDeRed(networkId: String): List<Usuario> {
         val network = obtenerNetworkPorId(networkId) ?: return emptyList()
         val uids = network.miembros.keys
@@ -101,6 +142,13 @@ class NetworkRepositoryImpl : INetworkRepository {
         return list
     }
 
+    /**
+     * Expulsa a un miembro de la red vecinal y reinicia sus credenciales comunitarias.
+     *
+     * @param usuarioId UID del miembro expulsado.
+     * @param networkId ID de la red.
+     * @return `true` si la expulsión se realizó correctamente.
+     */
     override suspend fun expulsarMiembro(usuarioId: String, networkId: String): Boolean {
         return try {
             db.getReference("networks")
@@ -124,6 +172,13 @@ class NetworkRepositoryImpl : INetworkRepository {
         }
     }
 
+    /**
+     * Renombra una red comunitaria en Firebase.
+     *
+     * @param networkId ID de la red.
+     * @param nuevoNombre Nuevo nombre asignado.
+     * @return `true` en caso de éxito.
+     */
     override suspend fun actualizarNombreRed(networkId: String, nuevoNombre: String): Boolean {
         return try {
             db.getReference("networks").child(networkId).child("nombre").setValue(nuevoNombre).await()
@@ -133,6 +188,12 @@ class NetworkRepositoryImpl : INetworkRepository {
         }
     }
 
+    /**
+     * Consulta las alertas asociadas a una red comunitaria.
+     *
+     * @param networkId ID de la red.
+     * @return Lista de alertas emitidas en la red.
+     */
     override suspend fun obtenerAlertasDeRed(networkId: String): List<mx.edu.utng.cunasegura.domain.model.Alerta> {
         return try {
             val snapshot = db.getReference("alertas").get().await()
@@ -168,6 +229,16 @@ class NetworkRepositoryImpl : INetworkRepository {
         }
     }
 
+    /**
+     * Persiste los parámetros globales de la red vecinal en `/configuracion_global`.
+     *
+     * @param tipo Tipo de red (`Abierta` o `Cerrada`).
+     * @param radio Radio en metros.
+     * @param tiempoAntiFalsa Segundos de gracia antes de disparo definitivo.
+     * @param checkVida Minutos de intervalo de verificación.
+     * @param esperarDiasNuevos Días de restricción para nuevos ingresos.
+     * @param tiempoVidaAlerta Minutos de vigencia de una alerta activa.
+     */
     override suspend fun guardarConfiguracionGlobal(
         tipo: String,
         radio: Double,
@@ -187,6 +258,11 @@ class NetworkRepositoryImpl : INetworkRepository {
         db.getReference("configuracion_global").setValue(map).await()
     }
 
+    /**
+     * Obtiene el mapa de configuraciones globales vigentes en Firebase Realtime Database.
+     *
+     * @return Mapa de clave y valor de configuración global.
+     */
     override suspend fun obtenerConfiguracionGlobal(): Map<String, Any> {
         return try {
             val snapshot = db.getReference("configuracion_global").get().await()
@@ -204,3 +280,4 @@ class NetworkRepositoryImpl : INetworkRepository {
         }
     }
 }
+
