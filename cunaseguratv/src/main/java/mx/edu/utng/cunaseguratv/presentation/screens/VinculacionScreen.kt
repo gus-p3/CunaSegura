@@ -14,6 +14,19 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import mx.edu.utng.cunaseguratv.presentation.TvUiState
 
+/**
+ * Pantalla de vinculación inicial para Smart TV mediante código QR.
+ *
+ * Muestra el código QR generado dinámicamente que codifica el identificador de la televisión.
+ * Los usuarios pueden escanear este código desde la app móvil de Cuna Segura para asociar
+ * la Smart TV a su red vecinal sin requerir ingreso manual de credenciales con el control remoto.
+ *
+ * @param state Estado reactivo actual de la interfaz de usuario [TvUiState].
+ * @param onSimularVinculacion Lambda callback invocado para propósitos de prueba o simulación en emulador.
+ *
+ * @author Cuna Segura Team
+ * @version 1.0
+ */
 @Composable
 fun VinculacionScreen(
     state: TvUiState,
@@ -59,10 +72,11 @@ fun VinculacionScreen(
                 Text("Generando código QR...")
             }
             
-            // Botón oculto/simulado para pruebas
+            // Botón enfocado para simulación en entorno de emulador sin cámara
             Button(onClick = onSimularVinculacion) {
                 Text("Simular Vinculación Exitosa")
             }
         }
     }
 }
+

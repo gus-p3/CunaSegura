@@ -9,13 +9,39 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 
+/**
+ * Servicio encargado de escuchar y sincronizar en tiempo real las alertas de seguridad
+ * almacenadas en Firebase Realtime Database para el módulo Smart TV.
+ *
+ * Transforma los eventos de [ValueEventListener] de Firebase en un [Flow] asíncrono y reactivo,
+ * aplicando filtros de expiración temporal basados en `tiempoVidaAlerta`, eliminando duplicados
+ * y ordenando las alertas cronológicamente.
+ *
+ * @author Cuna Segura Team
+ * @version 1.0
+ */
 class FirebaseAlertListener {
 
     private val dbRef = FirebaseDatabase.getInstance().getReference("alertas")
     private val TAG = "FirebaseAlertListener"
 
+    /**
+     * Inicia la escucha reactiva de alertas activas desde Firebase Realtime Database.
+     *
+     * Realiza las siguientes operaciones:
+     * 1. Consulta la configuración global (`configuracion_global/tiempoVidaAlerta`) para determinar
+     *    la ventana de validez temporal de las alertas (por defecto 720 minutos / 12 horas).
+     * 2. Suscribe un [ValueEventListener] en `/alertas`.
+     * 3. Filtra alertas con estado `"activa"` pertenecientes a [targetNetworkId] o globales.
+     * 4. Descarta alertas expiradas respecto a la marca temporal actual.
+     * 5. Agrupa por vecino para conservar únicamente la alerta más reciente por usuario.
+     * 6. Emite la lista resultante ordenada en forma descendente por fecha de creación.
+     *
+     * @param targetNetworkId Identificador opcional de la red vecinal vinculada. Si está vacío, procesa todas las alertas.
+     * @return [Flow] reactivo con la lista de alertas activas [AlertaTV] actualizadas en tiempo real.
+     */
     fun escucharAlertasActivas(targetNetworkId: String = ""): Flow<List<AlertaTV>> = callbackFlow {
-        var tiempoVidaMs = 720L * 60 * 1000 // 720 minutes default (12h)
+        var tiempoVidaMs = 720L * 60 * 1000 // 720 minutos por defecto (12h)
         FirebaseDatabase.getInstance().getReference("configuracion_global").child("tiempoVidaAlerta").get().addOnSuccessListener { snap ->
             val minutos = snap.getValue(Double::class.java) ?: 720.0
             tiempoVidaMs = (minutos * 60 * 1000).toLong()
@@ -79,3 +105,4 @@ class FirebaseAlertListener {
         awaitClose { dbRef.removeEventListener(listener) }
     }
 }
+

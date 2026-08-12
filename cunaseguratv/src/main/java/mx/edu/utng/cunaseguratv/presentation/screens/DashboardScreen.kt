@@ -43,6 +43,27 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 
+/**
+ * Pantalla principal del Dashboard de monitoreo para Smart TV.
+ *
+ * Ofrece una vista cinemática dividida en dos secciones principales:
+ * 1. **Panel Lateral Dinámico (40%)**: Muestra información de la red vecinal, titular vinculado,
+ *    lista de vecinos en tiempo real (activos/offline) y el historial de últimas alertas registradas.
+ *    Es completamente animado y colapsable para expandir el mapa al 100% del ancho de pantalla.
+ * 2. **Mapa Comunitario Interactivo (60% / 100%)**: Renderiza mapas de OpenStreetMap mediante OSMDroid (TileSource MAPNIK).
+ *    Dibuja marcadores circulares coloreados para el usuario actual, otros vecinos y alertas SOS activas.
+ *    Incluye controles en pantalla navegables mediante la cruceta direccional (D-Pad) del control remoto:
+ *    Zoom In, Zoom Out, Desplazamiento cardinal (▲, ▼, ◄, ►) y botón de Recentrado táctico (🎯).
+ *
+ * @param state Estado reactivo de la interfaz [TvUiState].
+ * @param onSilenciar Callback para silenciar la sirena auditiva activa.
+ * @param onCerrarSesion Callback para desvincular la TV y regresar al flujo de código QR.
+ * @param onToggleColorPicker Callback para abrir o cerrar el panel de selección de colores.
+ * @param onGuardarColores Callback para persistir los colores personalizados de los marcadores.
+ *
+ * @author Cuna Segura Team
+ * @version 1.0
+ */
 @Composable
 fun DashboardScreen(
     state: TvUiState,
@@ -94,6 +115,7 @@ fun DashboardScreen(
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
+
 
     Column(
         modifier = Modifier
@@ -541,8 +563,15 @@ fun DashboardScreen(
     }
 }
 
-// Componente visual para cada elemento del historial de alertas.
-// Emplea color surfaceVariant para garantizar su visibilidad en televisores bajo modo oscuro.
+/**
+ * Elemento de lista para renderizar un registro en el historial de alertas recientes de la Smart TV.
+ *
+ * Utiliza tarjetas con color `surfaceVariant` para asegurar contraste y legibilidad en pantallas oscuras de televisión.
+ * Extrae y formatea la fecha del timestamp epoch a formato legible `dd/MM/yyyy HH:mm`.
+ *
+ * @param alerta Objeto [AlertaTV] con los detalles del incidente registrado.
+ * @param state Estado actual de la UI [TvUiState] para cotejar identificadores y nombres.
+ */
 @Composable
 fun AlertaHistoryItem(alerta: AlertaTV, state: TvUiState) {
     Card(
@@ -578,6 +607,13 @@ fun AlertaHistoryItem(alerta: AlertaTV, state: TvUiState) {
     }
 }
 
+/**
+ * Vista de mapa alternativa basada en WebView + Leaflet.js para renderizado HTML embebido de OpenStreetMap.
+ *
+ * @param vecinos Lista de posiciones geográficas de los vecinos [VecinoLocation].
+ * @param alertas Lista de alertas activas registradas [AlertaTV].
+ * @param modifier Modificador de diseño Compose.
+ */
 @android.annotation.SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun TvWebViewMapView(
@@ -652,7 +688,16 @@ markersData.forEach(function(m){
     )
 }
 
-// Crea un marcador circular de color personalizado para OSMDroid
+/**
+ * Genera un icono [BitmapDrawable] circular personalizado para superponer en marcadores de OSMDroid.
+ *
+ * Dibuja un círculo relleno con el color seleccionado, un borde blanco de alto contraste y un punto focal central.
+ *
+ * @param context Contexto de la aplicación o actividad.
+ * @param color Color ARGB entero para el relleno del marcador.
+ * @param sizeDp Diámetro del marcador en unidades de densidad de píxeles (dp).
+ * @return [BitmapDrawable] listo para ser asignado a un [Marker] de OSMDroid.
+ */
 fun createColoredMarker(context: android.content.Context, color: Int, sizeDp: Int = 36): BitmapDrawable {
     val density = context.resources.displayMetrics.density
     val sizePx = (sizeDp * density).toInt()
@@ -673,7 +718,7 @@ fun createColoredMarker(context: android.content.Context, color: Int, sizeDp: In
     return BitmapDrawable(context.resources, bitmap)
 }
 
-// Colores disponibles para seleccionar en el panel
+/** Paleta de colores predefinidos disponibles para asignación en el diálogo selector de colores. */
 private val COLORES_DISPONIBLES = listOf(
     0xFF2196F3.toInt() to "Azul",
     0xFF4CAF50.toInt() to "Verde",
@@ -689,6 +734,17 @@ private val COLORES_DISPONIBLES = listOf(
     0xFF212121.toInt() to "Negro"
 )
 
+/**
+ * Diálogo modal para la configuración y personalización de los colores de los marcadores del mapa.
+ *
+ * Totalmente interactivo y navegable mediante control remoto de televisión (D-Pad).
+ *
+ * @param colorUsuario Color actual configurado para el titular de la televisión.
+ * @param colorVecinos Color actual configurado para los demás vecinos.
+ * @param colorAlertas Color actual configurado para emergencias SOS.
+ * @param onGuardar Callback invocado con la terna de nuevos colores para persistir en disco.
+ * @param onCerrar Callback para cerrar el diálogo sin guardar.
+ */
 @Composable
 fun ColorPickerDialog(
     colorUsuario: Int,
@@ -756,6 +812,13 @@ fun ColorPickerDialog(
     }
 }
 
+/**
+ * Fila horizontal con selector visual de colores basada en círculos con feedback de selección.
+ *
+ * @param label Etiqueta descriptiva del tipo de marcador a personalizar.
+ * @param selectedColor Color ARGB actualmente seleccionado.
+ * @param onSelect Callback invocado al seleccionar una nueva muestra cromática.
+ */
 @Composable
 fun ColorSelectorRow(label: String, selectedColor: Int, onSelect: (Int) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -786,3 +849,4 @@ fun ColorSelectorRow(label: String, selectedColor: Int, onSelect: (Int) -> Unit)
         }
     }
 }
+

@@ -26,7 +26,7 @@ Para desarrolladores que desean replicar, auditar o extender la implementación 
 | 📱 Guía Paso a Paso Smartphone | 📺 Guía Paso a Paso Smart TV | ⌚ Guía Paso a Paso Wear OS |
 | :---: | :---: | :---: |
 | [**`MOVIL_PASO.md`**](docs/guias_paso_a_paso/MOVIL_PASO.md) | [**`TV_PASO.md`**](docs/guias_paso_a_paso/TV_PASO.md) | [**`WEAROS_PASO.md`**](docs/guias_paso_a_paso/WEAROS_PASO.md) |
-| ✅ *11 Fases Completas: Arquitectura, Room, GPS, ZXing QR, Vico Charts y Admin.* | ⏳ *Central de Monitoreo Leanback, MQTT TLS y Audio Alarma.* | ⏳ *Disparador Háptico, Wearable Data Layer y Detección de Toques.* |
+| ✅ *11 Fases Completas: Arquitectura, Room, GPS, ZXing QR, Vico Charts y Admin.* | ✅ *9 Fases Completas: Leanback, Compose for TV, D-Pad, OSMDroid, MQTT TLS, Firebase RTDB y Sirena.* | ✅ *8 Fases Completas: Disparador Háptico, Wearable Data Layer, Room SQLite y Life Check.* |
 
 > 📁 **[Explorar Hub de Guías Técnicas Paso a Paso](docs/guias_paso_a_paso/README.md)**
 

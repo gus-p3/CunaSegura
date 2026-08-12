@@ -6,6 +6,7 @@ import androidx.tv.material3.darkColorScheme
 import androidx.tv.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 
+/** Tokens de color del sistema de diseño para Android TV (Optimizado para alto contraste en pantallas OLED/LED). */
 val primaryDark = Color(0xFFAAC7FF)
 val onPrimaryDark = Color(0xFF0A305F)
 val primaryContainerDark = Color(0xFF274777)
@@ -27,6 +28,7 @@ val onSurfaceDark = Color(0xFFE2E2E9)
 val surfaceVariantDark = Color(0xFF44474E)
 val onSurfaceVariantDark = Color(0xFFC4C6D0)
 
+/** Esquema de colores oscuros exclusivo para Compose for TV. */
 private val cunaSeguraTvColorScheme: ColorScheme = darkColorScheme(
     primary = primaryDark,
     onPrimary = onPrimaryDark,
@@ -50,6 +52,17 @@ private val cunaSeguraTvColorScheme: ColorScheme = darkColorScheme(
     onSurfaceVariant = onSurfaceVariantDark
 )
 
+/**
+ * Tema principal del módulo TV basado en `androidx.tv.material3.MaterialTheme`.
+ *
+ * Aplica una paleta cromática oscura cinemática y provee el contexto de diseño
+ * para todos los componentes de Compose for TV en la aplicación.
+ *
+ * @param content Contenido composable envuelto en el tema.
+ *
+ * @author Cuna Segura Team
+ * @version 1.0
+ */
 @Composable
 fun CunaSeguraTvTheme(
     content: @Composable () -> Unit
@@ -59,3 +72,4 @@ fun CunaSeguraTvTheme(
         content = content
     )
 }
+
